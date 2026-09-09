@@ -27,7 +27,6 @@ export default function Landing() {
       <section className="hero">
         <div className="container hero-grid">
           <div>
-            <span className="eyebrow">🌾 AI 기반 지역 농산물 유통·콘텐츠 커머스 플랫폼</span>
             <h1>
               전국 농산물의 실제 데이터를 기반으로
               <br />
@@ -36,38 +35,27 @@ export default function Landing() {
               <span className="accent">농업 특화 생성형 AI 커머스 플랫폼</span>
             </h1>
             <p className="lead">
-              농산물 데이터 × 생성형 AI 콘텐츠 × 채널 &lt;서영왔서영&gt;.
+              농산물 정보만 입력하면,
               <br />
-              콘텐츠 제작부터 공동구매·온라인 판매까지 한 번에 연결!
+              똑똑한 AI가 우리 농가의 이야기를 콘텐츠로 만들어드립니다.
+            </p>
+            <p className="lead">
+              콘텐츠 제작부터 공동구매 · 온라인 판매까지 한 번에!
               <br />
-              농가·셀러·소비자 모두 만족할 수 있는 서비스를 제공합니다.
+              농산물 데이터 · 생성형 AI 콘텐츠 · 유튜브 채널 &lt;서영왔서영&gt;
             </p>
             <div className="cta-row">
-              <LinkButton to="/shop" variant="primary" size="lg">
-                농산물 스토어 둘러보기
-              </LinkButton>
-              <LinkButton to="/signup" variant="outline" size="lg">
+              <LinkButton to="/signup" variant="primary" size="lg">
                 농가·셀러 회원가입
               </LinkButton>
-            </div>
-            <div className="trust">
-              <span>📍 지역성 — 아산 농산물의 가치 확산</span>
-              <span>🤖 AI/AX — 콘텐츠부터 판매까지</span>
-              <span>📈 판매실증 — 공동구매로 매출 실현</span>
+              <LinkButton to="/studio/video" variant="outline" size="lg">
+                🎬 AI 영상 만들기
+              </LinkButton>
             </div>
           </div>
 
           <div className="hero-visual">
             <HeroPhone />
-            <div className="float-card a">
-              <span className="fi">📝</span> 농가 정보·사진 입력
-            </div>
-            <div className="float-card b">
-              <span className="fi">🤖</span> AI가 스크립트 생성
-            </div>
-            <div className="float-card c">
-              <span className="fi">📥</span> SNS 숏폼 영상 완성
-            </div>
           </div>
         </div>
       </section>
@@ -104,7 +92,7 @@ export default function Landing() {
               <span className="badge badge-ok" style={{ marginBottom: 12 }}>
                 농가 입력 정보
               </span>
-              <h3 style={{ fontSize: 20 }}>아산 배</h3>
+              <h3 style={{ fontSize: 20 }}>성환 배</h3>
               <div className="spec-list">
                 <div className="spec">
                   <span className="k">농가 경력</span>
@@ -120,7 +108,7 @@ export default function Landing() {
                 </div>
                 <div className="spec">
                   <span className="k">지역</span>
-                  <span className="v">아산 지역 농가</span>
+                  <span className="v">성환 지역 농가</span>
                 </div>
               </div>
             </div>
@@ -130,7 +118,7 @@ export default function Landing() {
               <div className="card" style={{ overflow: 'hidden' }}>
                 <div style={{ padding: 16 }}>
                   <div className="video-thumb wide" style={{ margin: '0 auto' }}>
-                    <img src="/byoung.png" alt="서영왔서영 — 본격적으로 아산 배 따는 서영" />
+                    <img src="/byoung.png" alt="서영왔서영 — 본격적으로 성환 배 따는 서영" />
                     <span className="play" aria-hidden />
                     <span className="len">15초</span>
                   </div>
@@ -140,7 +128,7 @@ export default function Landing() {
                     SNS 숏폼 영상
                   </div>
                   <p className="muted" style={{ fontSize: 14 }}>
-                    "아산에서 20년째 배 농사를 짓고 있습니다…"
+                    "성환에서 20년째 배 농사를 짓고 있습니다…"
                     <br />
                     농가 이야기를 담은 15초 영상 + 게시글 문구
                   </p>
@@ -228,7 +216,7 @@ export default function Landing() {
       {/* ── 최종 CTA ── */}
       <section className="final-cta">
         <div className="container">
-          <h2>아산 농산물을 더 젊고, 더 신뢰도 높게, 더 잘 팔리게</h2>
+          <h2>농산물을 더 젊고, 더 신뢰도 높게, 더 잘 팔리게</h2>
           <p>AI로 새로운 농산물 온라인 유통 시대를 엽니다.</p>
           <div className="row" style={{ gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link to="/shop" className="btn btn-amber btn-lg">

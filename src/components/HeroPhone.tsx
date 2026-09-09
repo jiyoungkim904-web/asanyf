@@ -2,7 +2,8 @@ import { useState } from 'react'
 
 /**
  * 랜딩 히어로의 "콘텐츠 미리보기" 핸드폰 목업.
- * 서영왔서영 산지 방문 컷(public/syoung.jpg)을 숏폼 미리보기로 보여주고,
+ * 채널 <서영왔서영>의 유튜브 채널 화면처럼 보이는 화면으로,
+ * 대표 영상 썸네일은 산지 방문 컷(public/syoung.jpg)을 쓰고
  * 이미지 로드 실패 시 아래 OrchardScene 일러스트로 대체된다.
  */
 function OrchardScene() {
@@ -75,29 +76,79 @@ export function HeroPhone() {
 
   return (
     <div className="phone">
-      <div className="phone-screen">
-        <span className="phone-brand">📍 서영왔서영</span>
-        <span className="phone-official">공식채널</span>
-
-        <div className="phone-video">
-          {imgOk ? (
-            <img
-              src="/syoung.jpg"
-              alt="서영왔서영 — 아산 배 농가를 찾아간 서영"
-              style={{ objectPosition: 'center 24%' }}
-              onError={() => setImgOk(false)}
-            />
-          ) : (
-            <OrchardScene />
-          )}
-          <span className="phone-play" aria-hidden />
-          <span className="phone-dur">0:15</span>
+      <div className="yt">
+        <div className="yt-status">
+          <span>9:41</span>
+          <span className="yt-status-r">5G ▮▮▮</span>
         </div>
 
-        <div className="phone-cap">
-          <span className="phone-tag">AI 생성 · SNS 숏폼</span>
-          <b>본격적으로 아산 배 따는 서영</b>
-          <span className="phone-hash">#영팜마켓 #아산배 #친환경 #농가직송</span>
+        <div className="yt-top">
+          <span className="yt-logo">
+            <b className="yt-play" aria-hidden />
+            서영왔서영
+          </span>
+          <span className="yt-top-ico" aria-hidden>🔍</span>
+        </div>
+
+        <div className="yt-banner" aria-hidden />
+
+        <div className="yt-channel">
+          <div className="yt-avatar">
+            {imgOk ? (
+              <img src="/syoung.jpg" alt="" onError={() => setImgOk(false)} />
+            ) : (
+              <span>서</span>
+            )}
+          </div>
+          <div className="yt-cmeta">
+            <div className="yt-cname">
+              서영왔서영
+              <span className="yt-verified" aria-hidden>✓</span>
+            </div>
+            <div className="yt-csub">@syfm95 · 구독자 1.2만명 · 동영상 84개</div>
+          </div>
+        </div>
+
+        <div className="yt-actions">
+          <button type="button" className="yt-subscribe">구독</button>
+          <span className="yt-bell" aria-hidden>🔔</span>
+        </div>
+
+        <div className="yt-tabs">
+          <span className="on">동영상</span>
+          <span>Shorts</span>
+          <span>재생목록</span>
+          <span>정보</span>
+        </div>
+
+        <div className="yt-feed">
+          <div className="yt-video">
+            <div className="yt-thumb">
+              {imgOk ? (
+                <img
+                  src="/syoung.jpg"
+                  alt="서영왔서영 — 성환 배 농가를 찾아간 서영"
+                  onError={() => setImgOk(false)}
+                />
+              ) : (
+                <OrchardScene />
+              )}
+              <span className="yt-play-badge" aria-hidden />
+              <span className="yt-dur">0:15</span>
+            </div>
+            <div className="yt-vtitle">본격적으로 성환 배 따는 서영</div>
+            <div className="yt-vmeta">AI 생성 · SNS 숏폼 · 조회수 3.1만회 · 2일 전</div>
+          </div>
+
+          <div className="yt-video row">
+            <div className="yt-thumb ph" aria-hidden>
+              <span className="yt-dur">0:22</span>
+            </div>
+            <div>
+              <div className="yt-vtitle sm">서영이 알려주는 당도 높은 배 고르는 법</div>
+              <div className="yt-vmeta">조회수 1.8만회 · 5일 전</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

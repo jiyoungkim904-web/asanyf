@@ -881,19 +881,6 @@ table.data tbody tr:hover { background: var(--brand-50); }
   .hero-grid { grid-template-columns: 1fr; gap: 40px; }
   .hero { padding: 48px 0 56px; }
 }
-.hero .eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--brand-50);
-  border: 1px solid var(--brand-100);
-  color: var(--brand-800);
-  font-weight: 700;
-  font-size: 13px;
-  padding: 6px 13px;
-  border-radius: 999px;
-  margin-bottom: 22px;
-}
 .hero h1 {
   /* 세 줄 각각이 히어로 좌측 컬럼 폭 안에서 줄바꿈되지 않도록 유동 크기로 축소 */
   font-size: clamp(19px, 2.3vw, 25px);
@@ -920,169 +907,252 @@ table.data tbody tr:hover { background: var(--brand-50); }
   gap: 12px;
   flex-wrap: wrap;
 }
-.hero .trust {
-  margin-top: 24px;
-  font-size: 13.5px;
-  color: var(--muted);
-  display: flex;
-  gap: 8px 18px;
-  flex-wrap: wrap;
-}
-.hero .trust span { display: flex; align-items: center; gap: 6px; }
 
-/* Hero 비주얼: 숏폼 목업 + 떠 있는 카드 */
+/* Hero 비주얼: 채널 <서영왔서영> 유튜브 채널 화면 목업 */
 .hero-visual {
   position: relative;
   display: grid;
   place-items: center;
 }
 .phone {
-  width: 264px;
-  aspect-ratio: 9 / 17;
-  border-radius: 34px;
-  background: var(--brand-900);
-  border: 8px solid var(--brand-900);
+  width: 272px;
+  aspect-ratio: 9 / 18.2;
+  border-radius: 38px;
+  background: #0d0d0d;
+  border: 9px solid #0d0d0d;
   box-shadow: var(--shadow-lg);
   position: relative;
   overflow: hidden;
 }
-.phone-screen {
+.yt {
   position: absolute;
   inset: 0;
-  border-radius: 26px;
+  border-radius: 29px;
   overflow: hidden;
-  background: linear-gradient(168deg, var(--brand-600), var(--brand-900) 78%);
+  background: #fff;
+  color: #0f0f0f;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 14px;
-  padding: 16px 14px;
+  font-size: 11px;
 }
-.phone-brand {
-  position: absolute;
-  top: 14px;
-  left: 12px;
+.yt-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 17px 3px;
+  font-size: 10px;
+  font-weight: 800;
+}
+.yt-status-r { letter-spacing: 0.5px; }
+.yt-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 13px 9px;
+}
+.yt-logo {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: rgba(255, 255, 255, 0.94);
-  color: var(--brand-800);
+  gap: 5px;
   font-weight: 800;
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  z-index: 3;
+  font-size: 13px;
+  letter-spacing: -0.02em;
 }
-.phone-official {
-  position: absolute;
-  top: 17px;
-  right: 13px;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  opacity: 0.85;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-  z-index: 3;
-}
-.phone-video {
+.yt-logo .yt-play {
   position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #0a1f12;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+  width: 18px;
+  height: 13px;
+  border-radius: 4px;
+  background: #ff0033;
 }
-.phone-video img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 32%;
-}
-.phone-play {
+.yt-logo .yt-play::after {
+  content: '';
   position: absolute;
   inset: 0;
   margin: auto;
-  width: 50px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 3.5px 0 3.5px 6px;
+  border-color: transparent transparent transparent #fff;
+  transform: translateX(1px);
+}
+.yt-top-ico {
+  font-size: 15px;
+  color: #0f0f0f;
+}
+.yt-banner {
   height: 50px;
+  background: linear-gradient(115deg, var(--brand-500), var(--brand-700) 52%, var(--brand-900));
+}
+.yt-channel {
+  display: flex;
+  gap: 10px;
+  padding: 0 14px;
+  margin-top: -17px;
+}
+.yt-avatar {
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.92);
+  border: 3px solid #fff;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--brand-100);
   display: grid;
   place-items: center;
-  box-shadow: var(--shadow);
-}
-.phone-play::after {
-  content: '';
-  border-style: solid;
-  border-width: 9px 0 9px 15px;
-  border-color: transparent transparent transparent var(--brand-800);
-  margin-left: 4px;
-}
-.phone-dur {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  background: rgba(0, 0, 0, 0.62);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 5px;
-}
-.phone-cap {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  color: #fff;
-}
-.phone-tag {
-  align-self: flex-start;
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
-  font-weight: 700;
-  font-size: 10.5px;
-  padding: 3px 8px;
-  border-radius: 6px;
-  backdrop-filter: blur(4px);
-}
-.phone-cap b {
-  font-size: 16px;
   font-weight: 800;
-  line-height: 1.35;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  font-size: 17px;
+  color: var(--brand-800);
 }
-.phone-hash {
-  color: #f0ddc4;
-  font-size: 11.5px;
+.yt-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 22%;
 }
-.float-card {
-  position: absolute;
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: var(--shadow-lg);
-  padding: 12px 14px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink);
+.yt-cmeta { padding-top: 20px; }
+.yt-cname {
   display: flex;
   align-items: center;
+  gap: 4px;
+  font-weight: 800;
+  font-size: 13.5px;
+}
+.yt-verified {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #606060;
+  color: #fff;
+  font-size: 8px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+.yt-csub {
+  color: #606060;
+  font-size: 9.5px;
+  margin-top: 2px;
+}
+.yt-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px 7px;
+}
+.yt-subscribe {
+  background: #0f0f0f;
+  color: #fff;
+  border: 0;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 6px 18px;
+  border-radius: 999px;
+  cursor: default;
+}
+.yt-bell {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f2f2f2;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+}
+.yt-tabs {
+  display: flex;
+  gap: 16px;
+  padding: 4px 14px 0;
+  border-bottom: 1px solid #e5e5e5;
+  font-size: 11px;
+  color: #606060;
+}
+.yt-tabs span { padding-bottom: 7px; }
+.yt-tabs .on {
+  color: #0f0f0f;
+  font-weight: 700;
+  box-shadow: inset 0 -2px 0 #0f0f0f;
+}
+.yt-feed {
+  flex: 1;
+  overflow: hidden;
+  padding-top: 10px;
+  background: #fff;
+}
+.yt-video { padding-bottom: 11px; }
+.yt-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #0a1f12;
+  overflow: hidden;
+}
+.yt-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+}
+.yt-thumb.ph {
+  background: linear-gradient(140deg, var(--brand-400, #eaa869), var(--brand-800));
+}
+.yt-play-badge {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+}
+.yt-play-badge::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 6px 0 6px 11px;
+  border-color: transparent transparent transparent #fff;
+  transform: translateX(1px);
+}
+.yt-dur {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.yt-vtitle {
+  font-weight: 700;
+  font-size: 11.5px;
+  line-height: 1.3;
+  padding: 7px 14px 0;
+}
+.yt-vtitle.sm { font-size: 11px; padding: 0; }
+.yt-vmeta {
+  color: #606060;
+  font-size: 9.5px;
+  padding: 2px 14px 0;
+}
+.yt-video.row {
+  display: flex;
   gap: 9px;
-  border: 1px solid var(--line);
+  padding: 0 14px 11px;
 }
-.float-card .fi {
-  width: 30px; height: 30px; border-radius: 8px;
-  display: grid; place-items: center; font-size: 15px;
-  background: var(--brand-100);
+.yt-video.row .yt-thumb {
+  width: 104px;
+  flex-shrink: 0;
+  aspect-ratio: 16 / 9;
+  border-radius: 7px;
 }
-.float-card.a { top: 8%; left: -6%; }
-.float-card.b { bottom: 14%; right: -10%; }
-.float-card.c { bottom: -4%; left: 6%; background: var(--brand-800); color: #fff; }
-.float-card.c .fi { background: rgba(255,255,255,0.15); }
-@media (max-width: 460px) {
-  .float-card.a { left: 0; }
-  .float-card.b { right: 0; }
-}
-
+.yt-video.row .yt-vmeta { padding: 3px 0 0; }
 .lp-section {
   padding: 68px 0;
 }

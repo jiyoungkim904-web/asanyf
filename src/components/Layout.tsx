@@ -48,6 +48,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
           <Brand />
           <nav className="header-nav">
             <NavLink to="/shop">농산물 스토어</NavLink>
+            <NavLink to="/studio/video">AI 영상 만들기</NavLink>
             <NavLink to="/pricing">요금제</NavLink>
             {farm ? (
               <NavLink to="/dashboard">내 농가</NavLink>

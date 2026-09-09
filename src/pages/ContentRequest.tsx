@@ -7,6 +7,7 @@ import { won } from '../lib/billing'
 import type { Content, ContentLength, Entitlement, FarmProduct } from '../lib/types'
 import { Button, Empty, Loading, Notice, TempOptionTag, VideoThumb } from '../components/ui'
 import { PayModal } from '../components/PayModal'
+import { ScriptScenes } from '../components/ScriptScenes'
 
 type Phase = 'form' | 'progress'
 
@@ -204,6 +205,27 @@ export default function ContentRequest() {
               </div>
 
               <div className="field">
+                <label>영상 제작 방식</label>
+                <div className="choice-group">
+                  <button type="button" className="choice selected">
+                    🧩 농가 사진·영상 기반 템플릿 조립
+                  </button>
+                  <button
+                    type="button"
+                    className="choice"
+                    disabled
+                    title="완전 생성형 AI 영상은 프리미엄 로드맵으로 준비 중입니다"
+                  >
+                    ✨ 완전 생성형 AI 영상 (프리미엄, 준비 중)
+                  </button>
+                </div>
+                <span className="hint">
+                  AI가 스크립트·자막·씬 구성을 만들고, 농가가 올린 실제 사진으로 영상을 조립합니다. 완전
+                  합성 영상 생성은 추후 프리미엄 옵션으로 제공될 예정이에요.
+                </span>
+              </div>
+
+              <div className="field">
                 <label>
                   콘텐츠 길이 <TempOptionTag />
                 </label>
@@ -246,23 +268,7 @@ export default function ContentRequest() {
                 />
               </div>
               {previewScript ? (
-                <div className="script-box">
-                  <b style={{ fontSize: 14 }}>{previewTitle}</b>
-                  <p style={{ fontSize: 14, marginTop: 4, color: 'var(--green-800)' }}>
-                    “{previewScript.hook}”
-                  </p>
-                  <div style={{ marginTop: 8 }}>
-                    {previewScript.scenes.map((s, i) => (
-                      <div className="script-scene" key={i}>
-                        <span className="st">{s.time}</span>
-                        <div>
-                          <div className="sv">{s.visual}</div>
-                          <div className="sn">“{s.narration}”</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <ScriptScenes script={previewScript} product={product} />
               ) : (
                 <Loading label="예시 스크립트를 준비 중..." />
               )}

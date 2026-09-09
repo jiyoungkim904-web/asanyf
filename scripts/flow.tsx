@@ -51,6 +51,16 @@ assert((await api.getDetailPage(farm.id, product.id))!.headline === '내가 고�
 await api.publishDetailPage(farm.id, dp.id)
 assert((await api.getDetailPage(farm.id, product.id))!.status === 'published', '확정됨')
 
+// 생성된 영상을 상세페이지에 첨부 (실제 파일은 브라우저 videoStore, 여기선 메타만)
+await api.attachDetailVideo(product.id, {
+  assetId: 'vid_test1', label: '농장 소개 영상', model: 'google/veo-3.1', createdAt: new Date().toISOString(),
+})
+assert((await api.getDetailPage(farm.id, product.id))!.videos?.[0]?.assetId === 'vid_test1', '상세페이지에 영상 첨부')
+const allDp = await api.listDetailPages()
+assert(allDp.some((r) => r.product?.id === product.id && r.detailPage.videos?.length === 1), '스튜디오 첨부 목록에 반영')
+await api.detachDetailVideo(product.id, 'vid_test1')
+assert(((await api.getDetailPage(farm.id, product.id))!.videos ?? []).length === 0, '영상 첨부 제거')
+
 console.log('\n[3] AI 콘텐츠: 구독 없으면 건별 결제')
 const ent1 = await api.getEntitlement(farm.id)
 assert(ent1.kind === 'payg', `구독 없는 농가 → payg`)
@@ -158,7 +168,7 @@ assert(news.length >= 4, `소식 피드 ${news.length}건`)
 await api.buyer.likePost(news[0].post.id)
 assert((await api.buyer.news())[0].post.likes === news[0].post.likes + 1, '좋아요 +1')
 const sanji = await api.buyer.sanji()
-assert(sanji.length >= 4 && sanji[0].ep.epNo > sanji[1].ep.epNo, '산지왔서영 최신순')
+assert(sanji.length >= 4 && sanji[0].ep.epNo > sanji[1].ep.epNo, '서영왔서영 최신순')
 const reels = await api.buyer.reels()
 assert(reels.every((r: any) => r.content.status === 'published'), '숏폼은 발행분만')
 

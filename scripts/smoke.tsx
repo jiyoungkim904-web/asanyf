@@ -37,6 +37,7 @@ const pages: [string, string][] = [
   ['Signup', '../src/pages/Signup'],
   ['Login', '../src/pages/Login'],
   ['Pricing', '../src/pages/Pricing'],
+  ['VideoStudio', '../src/pages/studio/VideoStudio'],
   ['Dashboard', '../src/pages/Dashboard'],
   ['ProductNew', '../src/pages/ProductNew'],
   ['ProductHub', '../src/pages/ProductHub'],
@@ -67,6 +68,7 @@ const pages: [string, string][] = [
   ['AdminContentReview', '../src/pages/admin/AdminContentReview'],
   ['AdminRevenue', '../src/pages/admin/AdminRevenue'],
   ['AdminCommerce', '../src/pages/admin/AdminCommerce'],
+  ['AdminAccount', '../src/pages/admin/AdminAccount'],
 ]
 
 let ok = 0

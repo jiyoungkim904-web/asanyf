@@ -34,7 +34,7 @@ export default function ShopSanji() {
           <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.05em', color: 'var(--amber-500)' }}>
             영팜마켓 오리지널
           </div>
-          <h1 style={{ color: '#fff', fontSize: 24, marginTop: 6 }}>📍 산지왔서영</h1>
+          <h1 style={{ color: '#fff', fontSize: 24, marginTop: 6 }}>📍 서영왔서영</h1>
           <p style={{ fontSize: 13.5, opacity: 0.85, marginTop: 4 }}>
             서영이 전국 농가를 직접 찾아가 함께 수확하고, 진짜 이야기를 담는 산지 방문 시리즈.
           </p>

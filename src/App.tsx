@@ -19,6 +19,7 @@ import Contents from './pages/Contents'
 import ContentDetail from './pages/ContentDetail'
 import BillingPage from './pages/Billing'
 import Store from './pages/Store'
+import VideoStudio from './pages/studio/VideoStudio'
 
 import Shop from './pages/shop/Shop'
 import ShopSearch from './pages/shop/ShopSearch'
@@ -42,6 +43,7 @@ import AdminContents from './pages/admin/AdminContents'
 import AdminContentReview from './pages/admin/AdminContentReview'
 import AdminRevenue from './pages/admin/AdminRevenue'
 import AdminCommerce from './pages/admin/AdminCommerce'
+import AdminAccount from './pages/admin/AdminAccount'
 
 function ScrollTop() {
   const { pathname } = useLocation()
@@ -84,6 +86,7 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/studio/video" element={<VideoStudio />} />
 
         {/* 농가 */}
         <Route path="/dashboard" element={<RequireFarm><Dashboard /></RequireFarm>} />
@@ -120,6 +123,8 @@ export default function App() {
         <Route path="/admin/contents/:id" element={<RequireAdmin><AdminContentReview /></RequireAdmin>} />
         <Route path="/admin/commerce" element={<RequireAdmin><AdminCommerce /></RequireAdmin>} />
         <Route path="/admin/revenue" element={<RequireAdmin><AdminRevenue /></RequireAdmin>} />
+        <Route path="/admin/account" element={<RequireAdmin><AdminAccount /></RequireAdmin>} />
+        <Route path="/admin/studio" element={<RequireAdmin><VideoStudio /></RequireAdmin>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

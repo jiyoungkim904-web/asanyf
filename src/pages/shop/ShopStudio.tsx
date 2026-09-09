@@ -42,8 +42,8 @@ export default function ShopStudio() {
               key={t.label}
               onClick={() => setPicked(t.label)}
               style={{
-                background: picked === t.label ? 'var(--green-50)' : '#fff',
-                border: `1px solid ${picked === t.label ? 'var(--green-300)' : 'var(--line)'}`,
+                background: picked === t.label ? 'var(--brand-50)' : '#fff',
+                border: `1px solid ${picked === t.label ? 'var(--brand-300)' : 'var(--line)'}`,
                 borderRadius: 16,
                 padding: '14px 6px 12px',
                 textAlign: 'center',
@@ -116,6 +116,19 @@ export default function ShopStudio() {
           <Notice tone="info" >
             무료 체험(월 2건)으로 먼저 만들어볼 수 있어요.
           </Notice>
+        </div>
+
+        <div className="app-section">
+          <div className="sec-head">
+            <h2>실제 생성형 영상</h2>
+            <span className="badge badge-info">OpenRouter</span>
+          </div>
+          <Notice tone="info">
+            내 OpenRouter API 키를 넣으면 Veo·Sora·Seedance 등 실제 비디오 생성 모델로 영상을 만들 수 있어요.
+          </Notice>
+          <Link to="/studio/video" className="btn btn-outline btn-block" style={{ marginTop: 10 }}>
+            🎬 AI 영상 생성 스튜디오 열기
+          </Link>
         </div>
 
         <div style={{ position: 'sticky', bottom: 8, marginTop: 20 }}>

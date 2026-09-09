@@ -148,7 +148,20 @@ export default function DetailPageEditor() {
               <Notice tone="info">아직 초안이에요. 확인 후 아래에서 확정해주세요.</Notice>
             )}
 
-            <DetailPageView dp={dp} photo={product?.photos[0]} productName={product?.name} />
+            <DetailPageView
+              dp={dp}
+              photo={product?.photos[0]}
+              productName={product?.name}
+              onRemoveVideo={async (assetId) => {
+                if (!id) return
+                await api.detachDetailVideo(id, assetId)
+                setDp({ ...dp, videos: (dp.videos ?? []).filter((v) => v.assetId !== assetId) })
+              }}
+            />
+
+            <Notice tone="info">
+              영상은 <Link to="/admin/studio">AI 영상 생성 스튜디오</Link>에서 만들어 이 상세페이지에 첨부할 수 있어요.
+            </Notice>
 
             {dp.status !== 'published' ? (
               <Button size="lg" block loading={saving} onClick={publish}>

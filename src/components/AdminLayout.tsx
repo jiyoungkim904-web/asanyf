@@ -21,11 +21,12 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               대시보드
             </NavLink>
             <NavLink to="/admin/contents">콘텐츠 요청</NavLink>
+            <NavLink to="/admin/studio">영상 생성</NavLink>
             <NavLink to="/admin/commerce">커머스</NavLink>
             <NavLink to="/admin/revenue">매출</NavLink>
-            <span className="muted" style={{ fontSize: 14, marginLeft: 8 }}>
-              {admin?.name}
-            </span>
+            <NavLink to="/admin/account" style={{ marginLeft: 8 }}>
+              {admin?.name ?? '내 계정'}
+            </NavLink>
             <button
               className="btn btn-ghost btn-sm"
               onClick={() => {

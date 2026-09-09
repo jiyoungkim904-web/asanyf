@@ -70,7 +70,7 @@ export default function ShopSearch() {
                 <div
                   style={{
                     width: 60, height: 60, borderRadius: 12, flexShrink: 0,
-                    position: 'relative', overflow: 'hidden', background: 'var(--green-50)',
+                    position: 'relative', overflow: 'hidden', background: 'var(--brand-50)',
                   }}
                 >
                   <Art name={product?.name ?? listing.title} photos={product?.photos} />

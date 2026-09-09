@@ -146,6 +146,17 @@ export interface ScriptScene {
   time: string
   visual: string
   narration: string
+  caption?: string      // 화면에 얹히는 자막(오토 캡션) — 나레이션을 축약한 짧은 문구
+  photoIndex?: number    // 이 장면에 쓸 농가 원본 사진 — product.photos의 인덱스
+}
+
+/** 영상 제작 방식 — v1은 항상 template(농가 실제 소재 조립). generative는 추후 프리미엄 로드맵. */
+export type AssemblyMode = 'template' | 'generative'
+
+export interface NarrationVoice {
+  id: string
+  name: string     // 예: 잔잔한 여성 내레이션
+  style: string     // 예: 따뜻하고 차분한 톤
 }
 
 export interface Content {
@@ -163,7 +174,9 @@ export interface Content {
     scenes: ScriptScene[]
     caption: string
     hashtags: string[]
+    voice?: NarrationVoice   // TTS 내레이션 음성
   }
+  assemblyMode?: AssemblyMode  // 조립 방식 (v1: 'template' 고정)
   reviewNote?: string      // 운영자 수정 메모
   posterPhoto?: string     // 썸네일로 쓸 농산물 사진
   auto?: boolean           // 자동 진행 파이프라인 대상 여부 (프로토타입 연출)
@@ -174,6 +187,8 @@ export interface Content {
 export interface AdminUser {
   email: string
   name: string
+  role?: string        // 예: 콘텐츠 운영 / 총괄 운영자
+  loginAt?: string     // 이번 세션 로그인 시각
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -182,6 +197,14 @@ export interface AdminUser {
 // ─────────────────────────────────────────────────────────────
 
 export type DetailPageStatus = 'draft' | 'published'
+
+/** 상세페이지에 첨부된 AI 생성 영상 (실제 파일은 videoStore(IndexedDB)에 `assetId` 로 보관) */
+export interface DetailVideo {
+  assetId: string
+  label: string
+  model: string
+  createdAt: string
+}
 
 export interface DetailPage {
   id: string
@@ -197,6 +220,7 @@ export interface DetailPage {
   howto: string                        // 보관법·먹는법
   faq: { q: string; a: string }[]
   closing: string                      // 마무리 한 줄
+  videos?: DetailVideo[]               // 첨부된 AI 생성 영상
   createdAt: string
   updatedAt: string
 }
@@ -399,7 +423,7 @@ export interface ProduceSub {
   startedAt: string
 }
 
-// ── 앱 콘텐츠: 농장별 소식 / 산지왔서영 시리즈 ──────────────
+// ── 앱 콘텐츠: 농장별 소식 / 서영왔서영 시리즈 ──────────────
 
 /** 소식 탭 — 농가가 올리는 짧은 글/사진 소식 */
 export interface FarmPost {
@@ -411,7 +435,7 @@ export interface FarmPost {
   likes: number
 }
 
-/** 산지 탭 — '산지왔서영' 오리지널 산지 방문 콘텐츠 시리즈 */
+/** 산지 탭 — '서영왔서영' 오리지널 산지 방문 콘텐츠 시리즈 */
 export interface SanjiEpisode {
   id: string
   epNo: number

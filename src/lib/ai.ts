@@ -9,8 +9,25 @@
 //        → 농가 확인·수정 → generateScript(상세페이지 기반 숏폼 스크립트)
 // ─────────────────────────────────────────────────────────────
 
-import type { Content, ContentLength, DetailPage, FarmProduct } from './types'
+import type { Content, ContentLength, DetailPage, FarmProduct, NarrationVoice } from './types'
 import { CULTIVATION_LABEL } from './types'
+
+// 실제 영상 조립에 쓸 TTS 내레이션 보이스 (mock 목록 — 실 연동 시 TTS 벤더 보이스 id로 교체)
+const VOICES: NarrationVoice[] = [
+  { id: 'v_warm_f', name: '따뜻한 여성 내레이션', style: '차분하고 다정한 톤' },
+  { id: 'v_bright_f', name: '밝은 여성 내레이션', style: '경쾌하고 또렷한 톤' },
+  { id: 'v_calm_m', name: '차분한 남성 내레이션', style: '신뢰감 있는 저음 톤' },
+]
+function pickVoice(seed: string): NarrationVoice {
+  let h = 0
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0
+  return VOICES[h % VOICES.length]
+}
+// 나레이션 문장을 화면 자막용으로 축약 (오토 캡션)
+function toCaption(text: string, max = 16) {
+  const t = text.replace(/["“”.]/g, '').trim()
+  return t.length <= max ? t : t.slice(0, max) + '…'
+}
 
 export type GeneratedScript = Content['script']
 export type GeneratedDetail = Omit<
@@ -207,11 +224,19 @@ class MockAIProvider implements AIProvider {
         .join(' / ') +
       `\n주문은 프로필 링크로 📩`
 
+    // 각 장면에 농가가 올린 실제 사진을 순서대로 배정하고, 나레이션을 축약해 화면 자막(오토 캡션)으로 얹는다.
+    const photoCount = product.photos.length
+    const scenesWithAssets = scenes.map((s, i) => ({
+      ...s,
+      caption: toCaption(s.narration),
+      photoIndex: photoCount ? i % photoCount : undefined,
+    }))
+
     const script: GeneratedScript = {
       hook: is15
         ? `${place} ${product.name}, 딱 지금이 제철입니다 🍽️`
         : `20초만 투자하세요 — ${place} ${product.name} 이야기`,
-      scenes,
+      scenes: scenesWithAssets,
       caption,
       hashtags: [
         '#영팜마켓',
@@ -221,6 +246,7 @@ class MockAIProvider implements AIProvider {
         '#제철농산물',
         '#로컬푸드',
       ],
+      voice: pickVoice(product.id),
     }
     return { title, script }
   }

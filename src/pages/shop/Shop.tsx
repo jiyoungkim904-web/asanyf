@@ -70,7 +70,7 @@ export default function Shop() {
           </Link>
           <Link to="/shop/sanji">
             <div className="q-ico a">📍</div>
-            <span>산지왔서영</span>
+            <span>서영왔서영</span>
           </Link>
         </div>
 
@@ -94,11 +94,11 @@ export default function Shop() {
           </div>
         </div>
 
-        {/* 산지왔서영 최신 */}
+        {/* 서영왔서영 최신 */}
         {data.latestEpisode && (
           <div className="app-section">
             <div className="sec-head">
-              <h2>📍 산지왔서영</h2>
+              <h2>📍 서영왔서영</h2>
               <Link to="/shop/sanji">전체보기</Link>
             </div>
             <Link to="/shop/sanji" className="ep-card">

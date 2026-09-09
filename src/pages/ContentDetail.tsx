@@ -6,6 +6,7 @@ import type { Content, FarmProduct } from '../lib/types'
 import { LENGTH_LABEL, STATUS_LABEL } from '../lib/types'
 import { formatDate } from '../lib/format'
 import { Button, Loading, Notice, StatusBadge, VideoThumb } from '../components/ui'
+import { ScriptScenes } from '../components/ScriptScenes'
 
 function buildPackage(content: Content, product?: FarmProduct) {
   const s = content.script
@@ -18,10 +19,18 @@ function buildPackage(content: Content, product?: FarmProduct) {
     `제작일: ${formatDate(content.createdAt)}`,
     `발행일: ${formatDate(content.publishedAt)}`,
     ``,
+    `제작 방식: 농가 실제 사진 템플릿 조립 (완전 생성형 아님)`,
+    `TTS 내레이션: ${s.voice ? `${s.voice.name} (${s.voice.style})` : '-'}`,
+    ``,
     `── 영상 스크립트 ──`,
     `후킹 문구: ${s.hook}`,
     ``,
-    ...s.scenes.map((sc) => `[${sc.time}] 화면: ${sc.visual}\n         나레이션: "${sc.narration}"`),
+    ...s.scenes.map(
+      (sc) =>
+        `[${sc.time}] 화면: ${sc.visual}${
+          sc.photoIndex !== undefined ? ` (농가 사진 #${sc.photoIndex + 1} 사용)` : ''
+        }\n         나레이션: "${sc.narration}"${sc.caption ? `\n         화면 자막: "${sc.caption}"` : ''}`,
+    ),
     ``,
     `── SNS 게시글 문구 ──`,
     s.caption,
@@ -188,32 +197,7 @@ export default function ContentDetail() {
               {/* AI 생성 스크립트 */}
               <div>
                 <h3 style={{ fontSize: 17, marginBottom: 10 }}>AI가 생성한 영상 스크립트</h3>
-                <div className="script-box">
-                  <p style={{ fontWeight: 700, color: 'var(--green-800)' }}>“{content.script.hook}”</p>
-                  <div style={{ marginTop: 8 }}>
-                    {content.script.scenes.map((s, i) => (
-                      <div className="script-scene" key={i}>
-                        <span className="st">{s.time}</span>
-                        <div>
-                          <div className="sv">{s.visual}</div>
-                          <div className="sn">“{s.narration}”</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="divider" style={{ margin: '14px 0' }} />
-                  <b style={{ fontSize: 14 }}>SNS 게시글 문구</b>
-                  <p style={{ whiteSpace: 'pre-wrap', fontSize: 14, marginTop: 4 }}>
-                    {content.script.caption}
-                  </p>
-                  <div style={{ marginTop: 10 }}>
-                    {content.script.hashtags.map((h) => (
-                      <span className="hashtag" key={h}>
-                        {h}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                <ScriptScenes script={content.script} product={product} />
               </div>
             </div>
           </div>

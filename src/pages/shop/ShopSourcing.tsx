@@ -93,7 +93,7 @@ export default function ShopSourcing() {
                     <div
                       style={{
                         width: 66, height: 66, borderRadius: 12, flexShrink: 0,
-                        position: 'relative', overflow: 'hidden', background: 'var(--green-50)',
+                        position: 'relative', overflow: 'hidden', background: 'var(--brand-50)',
                       }}
                     >
                       <Art name={row.product.name} photos={row.product.photos} />

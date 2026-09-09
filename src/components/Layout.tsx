@@ -7,7 +7,7 @@ function Brand() {
   return (
     <Link to="/" className="brand">
       <span className="mark">🌾</span>
-      영팜마켓<span style={{ color: 'var(--green-700)' }}>AI</span>
+      영팜마켓<span style={{ color: 'var(--brand-700)' }}>AI</span>
     </Link>
   )
 }

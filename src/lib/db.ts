@@ -328,7 +328,7 @@ export function seedIfEmpty() {
     { id: 'post_5', farmId: F_ASAN, body: '햅쌀은 10월 수확이라 지금은 예약만 받고 있어요. 작년에 놓치신 분들 이번엔 미리 알려드릴게요!', productId: P_RICE, createdAt: iso('2026-08-25T18:30:00'), likes: 12 },
   ]
 
-  // ── 산지왔서영 (오리지널 산지 방문 시리즈) ──────────────
+  // ── 서영왔서영 (오리지널 산지 방문 시리즈) ──────────────
   const sanjiEpisodes: SanjiEpisode[] = [
     { id: 'ep_1', epNo: 12, title: '본격적으로 아산 배 따는 서영', host: '서영', farmId: F_ASAN, productId: P_PEAR,
       summary: '20년 배 농사 김영수 사장님과 함께 신고배를 직접 수확해봤습니다. 봉지 씌우는 이유, 당도의 비밀까지.',

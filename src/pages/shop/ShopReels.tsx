@@ -38,7 +38,7 @@ export default function ShopReels() {
               <div
                 style={{
                   aspectRatio: '9 / 13',
-                  background: 'var(--green-50)',
+                  background: 'var(--brand-50)',
                   position: 'relative',
                   display: 'flex',
                   flexDirection: 'column',
@@ -58,7 +58,7 @@ export default function ShopReels() {
                   <span
                     style={{
                       borderStyle: 'solid', borderWidth: '11px 0 11px 18px',
-                      borderColor: 'transparent transparent transparent var(--green-800)', marginLeft: 4,
+                      borderColor: 'transparent transparent transparent var(--brand-800)', marginLeft: 4,
                     }}
                   />
                 </span>

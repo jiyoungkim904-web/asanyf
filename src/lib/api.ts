@@ -29,6 +29,7 @@ import type {
   ContentRequest,
   ContentStatus,
   DetailPage,
+  DetailVideo,
   Entitlement,
   Farm,
   FarmProduct,
@@ -175,6 +176,45 @@ export const api = {
     return net(true)
   },
 
+  /** 모든 상세페이지 + 농가·농산물 (영상 스튜디오의 "첨부 대상" 선택용). */
+  async listDetailPages() {
+    const db = read()
+    return net(
+      db.detailPages
+        .map((dp) => ({
+          detailPage: dp,
+          farm: db.farms.find((f) => f.id === dp.farmId),
+          product: db.products.find((p) => p.id === dp.productId),
+        }))
+        .filter((r) => r.farm && r.product)
+        .sort((a, b) => b.detailPage.updatedAt.localeCompare(a.detailPage.updatedAt)),
+    )
+  },
+
+  /** 생성된 영상을 상세페이지에 첨부한다 (실제 파일은 videoStore(IndexedDB)). */
+  async attachDetailVideo(productId: string, video: DetailVideo) {
+    let ok = false
+    update((d) => {
+      const dp = d.detailPages.find((p) => p.productId === productId)
+      if (!dp) return
+      dp.videos = [video, ...(dp.videos ?? []).filter((v) => v.assetId !== video.assetId)]
+      dp.updatedAt = new Date().toISOString()
+      ok = true
+    })
+    if (!ok) throw new Error('상세페이지를 찾을 수 없습니다. 먼저 상세페이지를 만들어주세요.')
+    return net(true)
+  },
+
+  async detachDetailVideo(productId: string, assetId: string) {
+    update((d) => {
+      const dp = d.detailPages.find((p) => p.productId === productId)
+      if (!dp || !dp.videos) return
+      dp.videos = dp.videos.filter((v) => v.assetId !== assetId)
+      dp.updatedAt = new Date().toISOString()
+    })
+    return net(true)
+  },
+
   // ── AI 콘텐츠 ────────────────────────────────────────────
 
   async listRequests(farmId: string) {
@@ -224,7 +264,7 @@ export const api = {
       id: uid('cnt'), requestId, farmId: input.farmId, productId: input.productId,
       title, status: 'analyzing', length: input.length, createdAt, script,
       posterPhoto: product.photos[0], auto: true, coveredBy: ent.kind,
-      detailPageId: detail?.id,
+      detailPageId: detail?.id, assemblyMode: 'template',
     }
     update((d) => {
       d.requests.push(request)
@@ -457,7 +497,7 @@ export const api = {
       return net(true)
     },
 
-    /** 산지왔서영 시리즈 */
+    /** 서영왔서영 시리즈 */
     async sanji() {
       const db = read()
       return net(
@@ -711,7 +751,12 @@ export const api = {
   admin: {
     async login(email: string, password: string) {
       if (email.toLowerCase() === 'admin@youngfarm.ai' && password === 'admin1234')
-        return net({ email: 'admin@youngfarm.ai', name: '운영자' })
+        return net({
+          email: 'admin@youngfarm.ai',
+          name: '운영자',
+          role: '총괄 운영자',
+          loginAt: new Date().toISOString(),
+        })
       throw new Error('관리자 계정 정보가 올바르지 않습니다.')
     },
 
@@ -817,6 +862,7 @@ export const api = {
             id: uid('cnt'), requestId, farmId: request.farmId, productId: request.productId,
             title, script, length: request.length, status: 'review',
             createdAt: new Date().toISOString(), posterPhoto: product.photos[0],
+            assemblyMode: 'template',
           })
         }
       })

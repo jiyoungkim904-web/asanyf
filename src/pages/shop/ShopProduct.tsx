@@ -73,7 +73,7 @@ export default function ShopProduct() {
                     showPlay
                   />
                 </div>
-                <p style={{ fontSize: 13, marginTop: 10, color: 'var(--green-800)' }}>“{content.script.hook}”</p>
+                <p style={{ fontSize: 13, marginTop: 10, color: 'var(--brand-800)' }}>“{content.script.hook}”</p>
               </div>
             )}
           </div>

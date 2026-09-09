@@ -5,6 +5,7 @@ import { formatDate } from '../../lib/format'
 import type { Content, Farm, FarmProduct } from '../../lib/types'
 import { CULTIVATION_LABEL, LENGTH_LABEL, STATUS_LABEL } from '../../lib/types'
 import { Button, Loading, Notice, StatusBadge, VideoThumb } from '../../components/ui'
+import { ScriptScenes } from '../../components/ScriptScenes'
 
 interface ReviewData {
   content: Content
@@ -123,31 +124,8 @@ export default function AdminContentReview() {
 
             <div className="card card-pad">
               <b style={{ fontSize: 15 }}>스크립트 확인</b>
-              <p style={{ fontWeight: 700, color: 'var(--green-800)', margin: '8px 0' }}>
-                “{content.script.hook}”
-              </p>
-              <div className="script-box">
-                {content.script.scenes.map((s, i) => (
-                  <div className="script-scene" key={i}>
-                    <span className="st">{s.time}</span>
-                    <div>
-                      <div className="sv">{s.visual}</div>
-                      <div className="sn">“{s.narration}”</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="divider" />
-              <b style={{ fontSize: 14 }}>SNS 게시글 문구</b>
-              <p style={{ whiteSpace: 'pre-wrap', fontSize: 14, marginTop: 4 }}>
-                {content.script.caption}
-              </p>
-              <div style={{ marginTop: 10 }}>
-                {content.script.hashtags.map((h) => (
-                  <span className="hashtag" key={h}>
-                    {h}
-                  </span>
-                ))}
+              <div style={{ marginTop: 8 }}>
+                <ScriptScenes script={content.script} product={product} />
               </div>
             </div>
           </div>

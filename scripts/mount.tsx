@@ -65,10 +65,11 @@ async function checkRoute(path: string, expect: string) {
 }
 
 const routes: [string, string][] = [
-  ['/', 'AI 콘텐츠로'],
+  ['/', '생성형 AI 커머스 플랫폼'],
   ['/login', '로그인'],
   ['/signup', '농가 회원가입'],
   ['/pricing', '요금 안내'],
+  ['/studio/video', 'AI 영상 생성 스튜디오'],
   ['/dashboard', '사장님'],
   ['/products/new', 'STEP 1'],
   [`/products/${demoProductId}`, 'AI 상세페이지'],
@@ -85,7 +86,7 @@ const routes: [string, string][] = [
   ['/shop/sourcing', '농장별 소싱'],
   ['/shop/studio', 'AI 콘텐츠 스튜디오'],
   ['/shop/reels', '농가 숏폼'],
-  ['/shop/sanji', '산지왔서영'],
+  ['/shop/sanji', '서영왔서영'],
   [`/shop/product/${listing.id}`, listing.title],
   ['/shop/groupbuy', '공동구매'],
   [`/shop/groupbuy/${groupBuy.id}`, groupBuy.title],
@@ -101,7 +102,9 @@ const routes: [string, string][] = [
   [`/admin/contents/${reviewContent.id}`, '콘텐츠 검수'],
   ['/admin/revenue', '매출 현황'],
   ['/admin/commerce', '커머스 현황'],
-  ['/아무거나없는경로', 'AI 콘텐츠로'], // → '/' 리다이렉트
+  ['/admin/account', '내 계정'],
+  ['/admin/studio', 'AI 영상 생성 스튜디오'],
+  ['/아무거나없는경로', '생성형 AI 커머스 플랫폼'], // → '/' 리다이렉트
 ]
 
 let pass = 0

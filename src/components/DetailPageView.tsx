@@ -1,8 +1,20 @@
 import type { DetailPage } from '../lib/types'
 import { Art } from './ui'
+import { DetailVideoPlayer } from './DetailVideoPlayer'
 
 /** 확정된 AI 상세페이지를 실제 상품 상세처럼 렌더 (편집기 미리보기 · 스토어 공용) */
-export function DetailPageView({ dp, photo, productName }: { dp: DetailPage; photo?: string; productName?: string }) {
+export function DetailPageView({
+  dp,
+  photo,
+  productName,
+  onRemoveVideo,
+}: {
+  dp: DetailPage
+  photo?: string
+  productName?: string
+  /** 편집기에서만 전달 — 영상 옆에 "첨부 제거" 노출 */
+  onRemoveVideo?: (assetId: string) => void
+}) {
   return (
     <div className="dp">
       <div className="dp-hero">
@@ -11,9 +23,27 @@ export function DetailPageView({ dp, photo, productName }: { dp: DetailPage; pho
         <p>{dp.subheadline}</p>
       </div>
 
-      <div style={{ aspectRatio: '16 / 10', position: 'relative', overflow: 'hidden', background: 'var(--green-50)' }}>
+      <div style={{ aspectRatio: '16 / 10', position: 'relative', overflow: 'hidden', background: 'var(--brand-50)' }}>
         <Art name={productName ?? dp.headline} photos={photo ? [photo] : undefined} />
       </div>
+
+      {dp.videos && dp.videos.length > 0 && (
+        <div className="dp-section">
+          <h3>영상으로 보기</h3>
+          <div className="stack" style={{ gap: 16 }}>
+            {dp.videos.map((v) => (
+              <div key={v.assetId} className="stack" style={{ gap: 6 }}>
+                <DetailVideoPlayer
+                  assetId={v.assetId}
+                  label={v.label}
+                  onRemove={onRemoveVideo ? () => onRemoveVideo(v.assetId) : undefined}
+                />
+                {v.label && <span className="muted" style={{ fontSize: 13 }}>{v.label}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {dp.highlights.length > 0 && (
         <div className="dp-section">

@@ -89,7 +89,7 @@ export default function ShopGroupBuy() {
         {/* 메인 공동구매 카드 */}
         <div className="card card-pad">
           <div className="row" style={{ gap: 12, alignItems: 'flex-start' }}>
-            <div style={{ width: 68, height: 68, borderRadius: 14, position: 'relative', overflow: 'hidden', background: 'var(--green-50)', flexShrink: 0 }}>
+            <div style={{ width: 68, height: 68, borderRadius: 14, position: 'relative', overflow: 'hidden', background: 'var(--brand-50)', flexShrink: 0 }}>
               <Art name={product?.name ?? gb.title} photos={product?.photos} />
             </div>
             <div style={{ flex: 1 }}>
@@ -147,11 +147,11 @@ export default function ShopGroupBuy() {
           )}
         </div>
 
-        {/* 산지왔서영 */}
+        {/* 서영왔서영 */}
         {episode && (
           <div className="app-section">
             <div className="sec-head">
-              <h2>📍 산지왔서영</h2>
+              <h2>📍 서영왔서영</h2>
               <Link to="/shop/sanji">전체보기</Link>
             </div>
             <Link to="/shop/sanji" className="ep-card">
@@ -178,7 +178,7 @@ export default function ShopGroupBuy() {
             <div className="card card-pad">
               <div className="muted" style={{ fontSize: 12 }}>AI 시세분석</div>
               <div style={{ fontWeight: 800, fontSize: 15, marginTop: 4 }}>주간 시세 상승 추이</div>
-              <div style={{ color: 'var(--green-700)', fontWeight: 800 }}>+12.4%</div>
+              <div style={{ color: 'var(--brand-700)', fontWeight: 800 }}>+12.4%</div>
             </div>
             <div className="card card-pad">
               <div className="muted" style={{ fontSize: 12 }}>콘텐츠 성과</div>

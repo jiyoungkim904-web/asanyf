@@ -129,13 +129,10 @@ export default function Landing() {
               <div className="example-arrow">AI 제작 · 운영자 검수 ↓</div>
               <div className="card" style={{ overflow: 'hidden' }}>
                 <div style={{ padding: 16 }}>
-                  <div
-                    className="video-thumb"
-                    style={{ maxWidth: 240, margin: '0 auto', aspectRatio: '9 / 16' }}
-                  >
-                    <span className="emoji">🍐</span>
+                  <div className="video-thumb wide" style={{ margin: '0 auto' }}>
+                    <img src="/byoung.png" alt="서영왔서영 — 본격적으로 아산 배 따는 서영" />
+                    <span className="play" aria-hidden />
                     <span className="len">15초</span>
-                    <span className="cap">아산에서 자란 달콤한 배</span>
                   </div>
                 </div>
                 <div style={{ padding: '0 20px 20px', textAlign: 'center' }}>
@@ -150,6 +147,15 @@ export default function Landing() {
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="center" style={{ marginTop: 28 }}>
+            <Link to="/studio/video" className="btn btn-primary btn-lg">
+              🎬 AI로 직접 영상 만들어보기
+            </Link>
+            <p className="muted" style={{ fontSize: 13, marginTop: 8 }}>
+              OpenRouter API 키만 있으면 텍스트·사진으로 바로 생성됩니다.
+            </p>
           </div>
         </div>
       </section>
@@ -192,8 +198,8 @@ export default function Landing() {
             <div className="bm-card">
               <span className="bi">🎬</span>
               <div>
-                <h3>AI 콘텐츠 SaaS 구독</h3>
-                <p>셀러·농가 대상 콘텐츠 구독. <b>기본형 99,000원 / 고급형 199,000원</b>.</p>
+                <h3>AI 콘텐츠 예치금(코인)</h3>
+                <p>구독 없이 <b>코인 선충전</b> 후 제작 시 차감. 대량 충전 시 <b>보너스 코인</b>.</p>
               </div>
             </div>
             <div className="bm-card">

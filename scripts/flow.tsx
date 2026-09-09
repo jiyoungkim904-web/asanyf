@@ -61,27 +61,34 @@ assert(allDp.some((r) => r.product?.id === product.id && r.detailPage.videos?.le
 await api.detachDetailVideo(product.id, 'vid_test1')
 assert(((await api.getDetailPage(farm.id, product.id))!.videos ?? []).length === 0, '영상 첨부 제거')
 
-console.log('\n[3] AI 콘텐츠: 구독 없으면 건별 결제')
-const ent1 = await api.getEntitlement(farm.id)
-assert(ent1.kind === 'payg', `구독 없는 농가 → payg`)
+console.log('\n[3] AI 콘텐츠: 예치금(코인) 차감')
+const w0 = await api.getWallet(farm.id)
+assert(w0.balance === 100, `가입 축하 코인 100 (${w0.balance})`)
+// 잔액 부족이면 제작 불가
 try {
   await api.requestContent({ farmId: farm.id, productId: product.id, length: '15s' })
-  assert(false, 'payg인데 통과됨')
-} catch (e) { assert((e as Error).message === 'PAYG_REQUIRED', 'payg는 결제 동의 필요') }
-const before = read().orders.filter((o) => o.farmId === farm.id).length
-const { content } = await api.requestContent({ farmId: farm.id, productId: product.id, length: '15s', payForThis: true })
-assert(read().orders.filter((o) => o.farmId === farm.id).length === before + 1, '건별 결제 주문 생성')
-assert(content.script.scenes.length >= 3, 'AI 스크립트 생성')
+  assert(false, '코인 부족인데 통과됨')
+} catch (e) { assert((e as Error).message === 'INSUFFICIENT_COINS', '코인 부족 → INSUFFICIENT_COINS') }
+// 충전 (10만원 팩 = 1000 + 보너스 120)
+await api.topUpWallet(farm.id, 'pack_m')
+assert((await api.getWallet(farm.id)).balance === 100 + 1120, '충전+보너스 반영')
+const { content } = await api.requestContent({ farmId: farm.id, productId: product.id, length: '15s' })
+assert((await api.getWallet(farm.id)).balance === 1220 - 290, `제작 시 ${api.contentCoinCost()}코인 차감`)
+assert(content.coinCost === 290 && content.script.scenes.length >= 3, 'AI 스크립트 생성 + 코인 기록')
 assert(content.detailPageId === dp.id, '영상이 확정된 상세페이지를 재료로 사용')
 
-console.log('\n[4] AI 콘텐츠 SaaS 구독 → 한도 차감')
-await api.subscribe(farm.id, 'basic')
-const ent2 = await api.getEntitlement(farm.id)
-assert(ent2.kind === 'subscription' && ent2.remaining === 10, `기본형 구독 → 잔여 10건 (${ent2.kind === 'subscription' ? ent2.remaining : ''})`)
-await api.requestContent({ farmId: farm.id, productId: product.id, length: '15s' })
-assert((await api.getEntitlement(farm.id)).kind === 'subscription', '구독 유지')
-const b = await api.getBilling(farm.id)
-assert(b.plan?.id === 'basic' && b.quotaRemaining === 9, 'billing 잔여 9건')
+console.log('\n[4] 건별 부가서비스 — 코인 차감')
+await api.topUpWallet(farm.id, 'pack_l') // +3000 +500 보너스
+const beforeBal = (await api.getWallet(farm.id)).balance
+await api.createOrder({ farmId: farm.id, type: 'shooting', memo: '드론 촬영' })
+assert((await api.getWallet(farm.id)).balance === beforeBal - 1500, '촬영 대행 1500코인 차감')
+const w1 = await api.getWallet(farm.id)
+assert(
+  w1.txns.some((t) => t.type === 'spend' && t.amount === -1500) &&
+    w1.txns.some((t) => t.type === 'topup' && t.wonPaid === 100000) &&
+    w1.txns.some((t) => t.type === 'bonus'),
+  '코인 내역에 충전·보너스·사용 기록',
+)
 
 console.log('\n[5] 자동 진행 → 관리자 검수 → 승인')
 await sleep(19000)
@@ -127,10 +134,10 @@ const mySubs = await api.buyer.myProduceSubs(demoBuyer.id)
 assert(mySubs.some((s: any) => s.sub.id === psub.id), '구매자 마이페이지에 구독 표시')
 await api.buyer.setProduceSubStatus(demoBuyer.id, psub.id, 'paused')
 assert(read().produceSubs.find((s) => s.id === psub.id)!.status === 'paused', '일시정지 반영')
-// 농가는 콘텐츠 구독(basic)과 별개로 정기구독자를 본다
+// 농가의 콘텐츠 예치금과 소비자 농산물 정기구독은 완전 별개
 const store2 = await api.myStore(farm.id)
 assert(store2.produceSubs.length === 1, '농가 판매관리에 정기구독자 1명')
-assert(b.plan?.id === 'basic', '농가의 AI 콘텐츠 구독은 그대로 basic (농산물 구독과 무관)')
+assert((await api.getWallet(farm.id)).balance > 0, '농가 코인 잔액은 농산물 구독과 무관하게 유지')
 
 console.log('\n[9] ① 유통 소싱 (B2B)')
 const src = await api.buyer.sourcing()
@@ -140,23 +147,23 @@ assert(srcReq.status === 'requested' && srcReq.fee > 0 && srcReq.amount > 0, `�
 const mySrc = await api.buyer.mySourcing(demoBuyer.id)
 assert(mySrc.some((x: any) => x.req.id === srcReq.id), '내 소싱 내역에 표시')
 
-console.log('\n[10] ⑥ 건별 부가서비스')
-await api.createOrder({ farmId: farm.id, type: 'shooting', memo: '드론 촬영' })
-assert(read().orders.some((o) => o.farmId === farm.id && o.type === 'shooting'), '촬영 대행 주문')
+console.log('\n[10] ⑤ 건별 부가서비스 (코인 차감 확인)')
+assert(read().orders.some((o) => o.farmId === farm.id && o.type === 'shooting'), '촬영 대행 주문 (코인 차감)')
 
-console.log('\n[11] 관리자 매출 — 6개 라인 합산')
+console.log('\n[11] 관리자 매출 — 5개 라인 합산 (구독 → 예치금 충전)')
 const rev = await api.admin.revenue()
 assert(rev.sourcingFee > 0, `유통 소싱 수수료 ${rev.sourcingFee}`)
-assert(rev.contentMrr > 0, `콘텐츠 SaaS MRR ${rev.contentMrr}`)
-assert(rev.orderRev > 0, `콘텐츠 건별 ${rev.orderRev}`)
+assert(rev.coinTopupRevenue > 0, `콘텐츠 예치금 충전 매출 ${rev.coinTopupRevenue}`)
+assert(rev.coinsOutstanding > 0, `미사용 예치금(부채) ${rev.coinsOutstanding}`)
 assert(rev.selfSaleFee > 0, `자체 판매 수수료 ${rev.selfSaleFee}`)
 assert(rev.groupBuyFee > 0, `공동구매 수수료 ${rev.groupBuyFee}`)
 assert(rev.produceSubFee > 0, `정기구독 수수료 ${rev.produceSubFee}`)
 assert(
   rev.total ===
-    rev.sourcingFee + rev.contentMrr + rev.orderRev + rev.selfSaleFee + rev.groupBuyFee + rev.produceSubFee,
-  '매출 합계 = 6개 라인 합',
+    rev.sourcingFee + rev.coinTopupRevenue + rev.selfSaleFee + rev.groupBuyFee + rev.produceSubFee,
+  '매출 합계 = 5개 라인 합',
 )
+assert((rev as any).contentMrr === undefined, '구독 매출(contentMrr) 제거됨')
 const com = await api.admin.commerce()
 assert(com.totals.orders >= 3 && com.sourcing.length >= 4, '커머스 현황 집계 (소싱 포함)')
 

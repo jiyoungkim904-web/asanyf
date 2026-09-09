@@ -5,6 +5,8 @@
 
 import type {
   Buyer,
+  CoinTxn,
+  CoinWallet,
   Content,
   ContentRequest,
   DetailPage,
@@ -18,11 +20,10 @@ import type {
   SanjiEpisode,
   ShopOrder,
   SourcingRequest,
-  Subscription,
 } from './types'
 import { COMMERCE_FEE_RATE, SHIPPING_FEE, SOURCING_FEE_RATE } from './billing'
 
-const NS = 'youngfarm.v8'
+const NS = 'youngfarm.v9'
 
 interface DB {
   farms: Farm[]
@@ -30,7 +31,8 @@ interface DB {
   detailPages: DetailPage[]
   requests: ContentRequest[]
   contents: Content[]
-  subscriptions: Subscription[]
+  coinWallets: CoinWallet[]
+  coinTxns: CoinTxn[]
   orders: Order[]
   buyers: Buyer[]
   listings: Listing[]
@@ -44,7 +46,7 @@ interface DB {
 
 function empty(): DB {
   return {
-    farms: [], products: [], detailPages: [], requests: [], contents: [], subscriptions: [],
+    farms: [], products: [], detailPages: [], requests: [], contents: [], coinWallets: [], coinTxns: [],
     orders: [], buyers: [], listings: [], shopOrders: [], groupBuys: [], produceSubs: [],
     farmPosts: [], sanjiEpisodes: [], sourcingRequests: [],
   }
@@ -77,7 +79,7 @@ export function uid(prefix: string) {
 
 export function resetAll() {
   localStorage.removeItem(NS)
-  for (const v of ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7']) localStorage.removeItem(`youngfarm.${v}`)
+  for (const v of ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8']) localStorage.removeItem(`youngfarm.${v}`)
   localStorage.removeItem('youngfarm.session')
   localStorage.removeItem('youngfarm.cart')
   seedIfEmpty()
@@ -191,7 +193,7 @@ export function seedIfEmpty() {
   const contents: Content[] = []
   const addContent = (
     farmId: string, productId: string, title: string, status: Content['status'],
-    length: Content['length'], date: string, coveredBy: Content['coveredBy'],
+    length: Content['length'], date: string, coinCost: number,
     script: Content['script'], auto = false,
   ) => {
     const rid = uid('req')
@@ -199,7 +201,7 @@ export function seedIfEmpty() {
     contents.push({
       id: uid('cnt'), requestId: rid, farmId, productId, title, status, length,
       createdAt: iso(date), publishedAt: status === 'published' ? iso(date) : undefined,
-      coveredBy, script, auto,
+      coinCost, script, auto,
     })
   }
   const script = (product: string, region: string, hook: string): Content['script'] => ({
@@ -213,40 +215,69 @@ export function seedIfEmpty() {
     hashtags: ['#영팜마켓', `#${region.replace(/\s/g, '')}${product}`, '#농가직송', '#제철농산물'],
   })
 
-  addContent(F_ASAN, P_PEAR, '아산에서 자란 달콤한 배', 'published', '15s', '2026-08-22T10:20:00', 'subscription',
+  addContent(F_ASAN, P_PEAR, '아산에서 자란 달콤한 배', 'published', '15s', '2026-08-22T10:20:00', 290,
     script('배', '충남 아산', '충남 아산 배, 딱 지금이 제철입니다 🍽️'))
-  addContent(F_ASAN, P_PEAR, '아산 배밭의 하루', 'published', '30s', '2026-08-25T14:25:00', 'subscription',
+  addContent(F_ASAN, P_PEAR, '아산 배밭의 하루', 'published', '30s', '2026-08-25T14:25:00', 290,
     script('배', '충남 아산', '20초만 투자하세요 — 아산 배 이야기'))
-  addContent(F_ASAN, P_RICE, '주문받고 도정하는 아산 햅쌀', 'published', '15s', '2026-08-26T11:20:00', 'payg',
+  addContent(F_ASAN, P_RICE, '주문받고 도정하는 아산 햅쌀', 'published', '15s', '2026-08-26T11:20:00', 290,
     script('햅쌀', '충남 아산', '갓 도정한 밥맛, 아산 햅쌀 🍚'))
-  addContent(F_ASAN, P_PEAR, '아산 배 당도 자랑', 'producing', '15s', '2026-08-28T09:35:00', 'subscription',
+  addContent(F_ASAN, P_PEAR, '아산 배 당도 자랑', 'producing', '15s', '2026-08-28T09:35:00', 290,
     script('배', '충남 아산', '충남 아산 배, 딱 지금이 제철입니다 🍽️'))
-  addContent(F_ASAN, P_RICE, '아산 햅쌀 예약 안내', 'requested', '15s', '2026-08-29T08:10:00', 'subscription',
+  addContent(F_ASAN, P_RICE, '아산 햅쌀 예약 안내', 'requested', '15s', '2026-08-29T08:10:00', 290,
     script('햅쌀', '충남 아산', '갓 도정한 밥맛, 아산 햅쌀 🍚'))
-  addContent(F_NAJU, P_NAJU_PEAR, '3대째 이어온 나주 배', 'published', '15s', '2026-08-21T10:00:00', 'subscription',
+  addContent(F_NAJU, P_NAJU_PEAR, '3대째 이어온 나주 배', 'published', '15s', '2026-08-21T10:00:00', 290,
     script('배', '전남 나주', '3대째 이어온 나주 배 🍐'))
-  addContent(F_YC, P_GRAPE, '껍질째 먹는 영천 샤인머스캣', 'published', '15s', '2026-08-23T11:00:00', 'subscription',
+  addContent(F_YC, P_GRAPE, '껍질째 먹는 영천 샤인머스캣', 'published', '15s', '2026-08-23T11:00:00', 290,
     script('샤인머스캣', '경북 영천', '껍질째 먹는 영천 샤인머스캣 🍇'))
-  addContent(F_HAENAM, P_SWEET, '해남 꿀고구마 굽는 영상', 'review', '15s', '2026-08-29T07:30:00', 'payg',
+  addContent(F_HAENAM, P_SWEET, '해남 꿀고구마 굽는 영상', 'review', '15s', '2026-08-29T07:30:00', 290,
     script('꿀고구마', '전남 해남', '해남 꿀고구마, 오븐에 구우면 꿀이 주르륵 🍠'))
 
-  // ── ① AI 콘텐츠 구독 ─────────────────────────────────────
-  const subscriptions: Subscription[] = [
-    sub('sub_asan', F_ASAN, 'basic', 1, '2026-06-15', '2026-09-15'),
-    sub('sub_naju', F_NAJU, 'basic', 1, '2026-07-20', '2026-09-20'),
-    sub('sub_yc', F_YC, 'premium', 1, '2026-07-20', '2026-09-20'),
-  ]
+  // ── ① AI 콘텐츠 예치금(코인) ────────────────────────────
+  // 각 농가의 코인 지갑 + 입출금 내역 (충전/보너스/사용)
+  const coinTxns: CoinTxn[] = []
+  const coinWallets: CoinWallet[] = []
+  const wallet = (farmId: string, entries: [CoinTxn['type'], number, string, string, number?][]) => {
+    let bal = 0
+    let last = t0
+    for (const [type, amount, memo, date, wonPaid] of entries) {
+      bal += amount
+      last = iso(date)
+      coinTxns.push({
+        id: uid('ctx'), farmId, type, amount, balanceAfter: bal, memo,
+        wonPaid, createdAt: last,
+      })
+    }
+    coinWallets.push({ farmId, balance: bal, updatedAt: last })
+  }
+  wallet(F_ASAN, [
+    ['topup', 1000, '10만원 충전팩', '2026-06-15T09:00:00', 100000],
+    ['bonus', 120, '충전 보너스', '2026-06-15T09:00:00'],
+    ['spend', -290, '숏폼 영상 (아산에서 자란 달콤한 배)', '2026-08-22T10:20:00'],
+    ['spend', -290, '숏폼 영상 (아산 배밭의 하루)', '2026-08-25T14:25:00'],
+    ['spend', -290, '숏폼 영상 (주문받고 도정하는 아산 햅쌀)', '2026-08-26T11:20:00'],
+    ['spend', -1500, '현장 촬영 대행 (배밭 드론 촬영)', '2026-08-18T13:00:00'],
+  ])
+  wallet(F_NAJU, [
+    ['topup', 300, '3만원 충전팩', '2026-07-20T09:00:00', 30000],
+    ['spend', -290, '숏폼 영상 (3대째 이어온 나주 배)', '2026-08-21T10:00:00'],
+  ])
+  wallet(F_YC, [
+    ['topup', 3000, '30만원 충전팩', '2026-07-20T09:00:00', 300000],
+    ['bonus', 500, '충전 보너스', '2026-07-20T09:00:00'],
+    ['spend', -290, '숏폼 영상 (껍질째 먹는 영천 샤인머스캣)', '2026-08-23T11:00:00'],
+    ['spend', -500, '프리미엄 편집 (추석 프로모션용)', '2026-08-22T14:00:00'],
+  ])
+  wallet(F_HAENAM, [
+    ['topup', 300, '3만원 충전팩', '2026-08-28T09:00:00', 30000],
+    ['spend', -290, '숏폼 영상 (해남 꿀고구마 굽는 영상)', '2026-08-29T07:30:00'],
+  ])
 
-  // ── ⑤ 건별 부가서비스 ───────────────────────────────────
+  // ── ⑤ 건별 부가서비스 (코인 차감) ───────────────────────
   const orders: Order[] = [
-    { id: 'ord_1', farmId: F_ASAN, type: 'shooting', amount: 150000, status: 'done',
+    { id: 'ord_1', farmId: F_ASAN, type: 'shooting', amount: 1500, status: 'done',
       memo: '배밭 드론 촬영', relatedProductId: P_PEAR, createdAt: iso('2026-08-18T13:00:00') },
-    { id: 'ord_2', farmId: F_YC, type: 'premium_edit', amount: 50000, status: 'done',
+    { id: 'ord_2', farmId: F_YC, type: 'premium_edit', amount: 500, status: 'done',
       memo: '추석 프로모션용 편집본', createdAt: iso('2026-08-22T14:00:00') },
-    { id: 'ord_3', farmId: F_ASAN, type: 'extra_content', amount: 19000, status: 'paid',
-      memo: '콘텐츠 제작 (아산 햅쌀)', relatedProductId: P_RICE, createdAt: iso('2026-08-26T11:15:00') },
-    { id: 'ord_4', farmId: F_HAENAM, type: 'extra_content', amount: 19000, status: 'paid',
-      memo: '콘텐츠 제작 (해남 꿀고구마)', relatedProductId: P_SWEET, createdAt: iso('2026-08-29T07:30:00') },
   ]
 
   // ── 구매자(소비자) ──────────────────────────────────────
@@ -401,7 +432,8 @@ export function seedIfEmpty() {
     d.detailPages.push(...detailPages)
     d.requests.push(...requests)
     d.contents.push(...contents)
-    d.subscriptions.push(...subscriptions)
+    d.coinWallets.push(...coinWallets)
+    d.coinTxns.push(...coinTxns)
     d.orders.push(...orders)
     d.buyers.push(...buyers)
     d.listings.push(...listings)
@@ -415,10 +447,6 @@ export function seedIfEmpty() {
 }
 
 // ── 빌더 ────────────────────────────────────────────────────
-
-function sub(id: string, farmId: string, planId: Subscription['planId'], used: number, start: string, renew: string): Subscription {
-  return { id, farmId, planId, status: 'active', startedAt: iso(`${start}T09:00:00`), renewsAt: iso(`${renew}T09:00:00`), usedThisCycle: used }
-}
 
 function listing(id: string, farmId: string, productId: string, title: string, unitLabel: string, price: number, stock: number, description: string): Listing {
   return { id, farmId, productId, title, unitLabel, price, stock, description, status: 'live', createdAt: iso('2026-07-25T09:00:00') }

@@ -2,51 +2,45 @@
 // BM 정책 값 — ⚠️ 전부 '예시'. 확정되면 이 파일만 수정.
 // ─────────────────────────────────────────────────────────────
 
-import type { Order, OrderType, Plan, PlanId, ProducePlan } from './types'
+import type { CoinPack, Order, OrderType, ProducePlan } from './types'
 
-// ── ① AI 콘텐츠 제작 구독 (농가) ────────────────────────────
+// ── ① AI 콘텐츠 제작 — 예치금(코인) ────────────────────────
+// 구독제 폐지. 농가가 코인을 선충전해 두고 콘텐츠 제작·부가서비스에 사용한다.
 
-export const PLANS: Plan[] = [
-  {
-    id: 'trial',
-    name: '무료 체험',
-    priceMonthly: 0,
-    monthlyQuota: 2,
-    features: ['숏폼 영상 제작 월 2건', '자동 자막', '운영자 검수', '워터마크 포함'],
-  },
-  {
-    id: 'basic',
-    name: '기본형',
-    priceMonthly: 99000,
-    monthlyQuota: 10,
-    features: ['숏폼 영상 제작 월 10건', '자동 자막', '업로드 대행 SNS 2채널', '콘텐츠 보관 30일'],
-    recommended: true,
-  },
-  {
-    id: 'premium',
-    name: '고급형',
-    priceMonthly: 199000,
-    monthlyQuota: 30,
-    features: ['숏폼 영상 제작 월 30건', '자동 자막', '업로드 대행 SNS 5채널', '성과 리포트 제공', '콘텐츠 보관 90일'],
-  },
+/** 코인 1개의 원화 가치 (예시) */
+export const WON_PER_COIN = 100
+
+/** 숏폼 영상 1건 제작 비용 (코인) */
+export const CONTENT_COIN_COST = 290
+
+/** 건별 부가서비스 비용 (코인) */
+export const ORDER_COIN_PRICE: Record<OrderType, number> = {
+  extra_content: 190,
+  shooting: 1500,
+  premium_edit: 500,
+}
+
+/** 가입 시 지급하는 체험 코인 (예시) */
+export const WELCOME_COINS = 100
+
+/** 충전 팩 — 큰 금액일수록 보너스 코인 (예시) */
+export const COIN_PACKS: CoinPack[] = [
+  { id: 'pack_s', won: 30000, coins: 300, bonus: 0 },
+  { id: 'pack_m', won: 100000, coins: 1000, bonus: 120, recommended: true },
+  { id: 'pack_l', won: 300000, coins: 3000, bonus: 500 },
 ]
 
-export function planById(id: PlanId): Plan {
-  return PLANS.find((p) => p.id === id) ?? PLANS[0]
+export function coinPackById(id: string): CoinPack | undefined {
+  return COIN_PACKS.find((p) => p.id === id)
 }
 
-/** 구독이 없을 때 콘텐츠 1건 건별 결제가 */
-export const PAYG_CONTENT_PRICE = 29000
-
-// ── ⑤ 건별 부가서비스 ──────────────────────────────────────
-
-export const ORDER_PRICE: Record<OrderType, number> = {
-  extra_content: 19000,
-  shooting: 150000,
-  premium_edit: 50000,
+export function coins(n: number): string {
+  return `${n.toLocaleString('ko-KR')}코인`
 }
 
-export function orderRevenue(orders: Order[]): number {
+// ── ⑤ 건별 부가서비스 매출 참고 ────────────────────────────
+
+export function orderCoinSpend(orders: Order[]): number {
   return orders.filter((o) => o.status !== 'canceled').reduce((s, o) => s + o.amount, 0)
 }
 

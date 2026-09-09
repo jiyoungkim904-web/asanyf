@@ -37,12 +37,14 @@ npx tsx scripts/flow.tsx    # api.ts 레벨 시나리오(권한 분리 + BM 5종
 - **농가**: `/dashboard` `/products/*` `/content/request` `/contents/*` `/billing` `/store`
 - **구매자(앱)**: `/shop` 이하 — `AppLayout`(모바일/데스크톱 자동 전환, 880px)
 - **운영자**: `/admin/*` — 로그인, 대시보드, 콘텐츠 검수, 커머스/매출, `/admin/account`(내 계정), `/admin/studio`(AI 영상 생성)
-- **AI 영상 생성 스튜디오**: `/admin/studio` (운영자 헤더 "영상 생성") = `/studio/video` (공개) — 같은 화면, 아래 참고
+- **AI 영상 생성 스튜디오** (같은 `VideoStudio` 화면, 세 진입점):
+  `/studio/video` (공개, 랜딩 CTA) · `/studio` (농가 로그인, 헤더 "영상 제작") · `/admin/studio` (운영자 헤더 "영상 생성").
+  뒤로가기 링크는 경로로 문맥 판별(`/admin*`→운영자, `/studio`→농가, 그 외→홈).
 
 ## 수익모델(BM) — 5가지
 
 `src/lib/billing.ts` 한 곳에서 요율·단가 관리, 화면엔 "예시" 표기.
-① AI 콘텐츠 SaaS 구독 · ② 자체 판매 수수료 · ③ 공동구매 수수료 · ④ 농산물 정기구독(B2C) · ⑤ 건별 부가서비스.
+① AI 콘텐츠 예치금(코인) — 구독제 폐지, 코인 선충전 후 제작 시 차감(`coinWallets`/`coinTxns`, `CONTENT_COIN_COST`, `COIN_PACKS`) · ② 자체 판매 수수료 · ③ 공동구매 수수료 · ④ 농산물 정기구독(B2C) · ⑤ 건별 부가서비스(코인 차감).
 (지자체/B2G 사업 아님 — 관련 코드/문구 넣지 말 것.)
 
 ## AI 영상 파이프라인
@@ -67,10 +69,12 @@ npx tsx scripts/flow.tsx    # api.ts 레벨 시나리오(권한 분리 + BM 5종
 
 **API 키 보안 (`src/lib/secureKey.ts`)**
 - 사용자가 브라우저에서 직접 입력. 서버로 보내지 않음.
-- 저장(at-rest): 패스프레이즈 → PBKDF2(SHA-256, 210k) → AES-GCM 256으로 암호화해 localStorage.
-  평문 키는 디스크에 저장하지 않음. 새로고침하면 패스프레이즈로 잠금 해제.
+- 저장(at-rest): 이 브라우저 전용 AES-GCM 키(`extractable:false`, IndexedDB `youngfarm-secure`)로
+  암호화해 localStorage(`youngfarm.openrouter.key.v2`)에 저장. 평문 키는 디스크에 남지 않음.
+  같은 브라우저에서는 자동 복호화 → 패스프레이즈 없음(불편해서 제거함).
 - 전송(in-transit): 평문 키는 오직 `https://openrouter.ai`로만, HTTPS(TLS) 위에서 전송.
-- 잠금 해제된 키는 React state(메모리)에만 존재. "키 잠그기 / 키 삭제" 제공.
+- 복호화된 키는 React state(메모리)에만. "키 삭제" 제공.
+- 헤더 값은 ISO-8859-1만 허용 → 키에서 비ASCII 문자 자동 제거(`sanitizeApiKey`), `X-Title`도 로마자.
 - 브라우저 직접 호출이므로 CORS/네트워크 차단 시 안내 메시지 노출(`corsHint`). 배포 시 얇은 프록시가
   필요할 수 있음 — 그 경우에도 키 취급 원칙(암호화 저장, OpenRouter로만 전송)은 유지.
 

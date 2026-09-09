@@ -180,7 +180,7 @@ export interface Content {
   reviewNote?: string      // 운영자 수정 메모
   posterPhoto?: string     // 썸네일로 쓸 농산물 사진
   auto?: boolean           // 자동 진행 파이프라인 대상 여부 (프로토타입 연출)
-  coveredBy?: 'subscription' | 'payg'  // 이 콘텐츠가 구독/건별 중 무엇으로 제작됐는지
+  coinCost?: number        // 이 콘텐츠 제작에 차감된 코인
   detailPageId?: string    // 이 영상이 어떤 상세페이지를 토대로 만들어졌는지
 }
 
@@ -227,47 +227,57 @@ export interface DetailPage {
 
 // ─────────────────────────────────────────────────────────────
 // BM(수익모델) — 5가지
-//   ① AI 콘텐츠 제작 (메인)  건별 결제 + 농가 'AI 콘텐츠 구독'   plans / subscriptions / orders
+//   ① AI 콘텐츠 제작 (메인)  예치금(코인) 선충전 → 제작 시 차감   coinWallets / coinTxns
 //   ② 사이트 내 자체 판매    listings + shopOrders (플랫폼 수수료)
 //   ③ 공동구매              groupBuys
 //   ④ 농산물 정기구독(B2C)   produceSubs  ← 소비자가 농가 박스를 정기 수령
-//   ⑤ 건별 부가서비스        orders (촬영·편집)
+//   ⑤ 건별 부가서비스        orders (촬영·편집) — 코인 차감
 //
 // 페르소나: 농가 / 운영자 / 구매자(소비자)
 //
 // ⚠️ 금액·횟수·수수료율은 아직 미확정 → billing.ts 한 곳에서 관리, 화면엔 '예시'.
 // ─────────────────────────────────────────────────────────────
 
-// ── ① AI 콘텐츠 제작 구독 (농가) ────────────────────────────
+// ── ① AI 콘텐츠 제작 — 예치금(코인) (농가) ────────────────
+// 구독제 폐지 → 코인 선충전 방식. 농가가 코인을 미리 충전해 콘텐츠 제작·부가서비스에 사용.
 
-export type PlanId = 'trial' | 'basic' | 'premium'
-
-export interface Plan {
-  id: PlanId
-  name: string
-  priceMonthly: number       // 예시 금액
-  monthlyQuota: number       // 월 콘텐츠 제작 가능 횟수
-  features: string[]
-  recommended?: boolean
+/** 농가별 코인 잔액 */
+export interface CoinWallet {
+  farmId: string
+  balance: number
+  updatedAt: string
 }
 
-export type SubscriptionStatus = 'none' | 'active' | 'canceled'
+export type CoinTxnType = 'topup' | 'bonus' | 'spend' | 'refund'
 
-/** 농가의 'AI 콘텐츠 제작 구독' (소비자의 농산물 구독과 다름) */
-export interface Subscription {
+export const COIN_TXN_LABEL: Record<CoinTxnType, string> = {
+  topup: '충전',
+  bonus: '보너스',
+  spend: '사용',
+  refund: '환불',
+}
+
+/** 코인 입출금 내역 (양수: 충전·보너스·환불 / 음수: 사용) */
+export interface CoinTxn {
   id: string
   farmId: string
-  planId: PlanId
-  status: SubscriptionStatus
-  startedAt: string
-  renewsAt: string
-  usedThisCycle: number
+  type: CoinTxnType
+  amount: number
+  balanceAfter: number
+  memo: string
+  refId?: string        // 관련 content/order id
+  wonPaid?: number       // 충전 시 실제 결제 원화
+  createdAt: string
 }
 
-/** 콘텐츠 제작 1건이 무엇으로 커버되는지 (구독 잔여 → 건별 결제) */
-export type Entitlement =
-  | { kind: 'subscription'; plan: Plan; remaining: number }
-  | { kind: 'payg'; price: number }
+/** 충전 팩 */
+export interface CoinPack {
+  id: string
+  won: number
+  coins: number
+  bonus: number
+  recommended?: boolean
+}
 
 // ── ⑤ 건별 부가서비스 (농가) ───────────────────────────────
 

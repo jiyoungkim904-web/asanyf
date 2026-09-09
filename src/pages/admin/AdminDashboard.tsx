@@ -25,8 +25,8 @@ interface FarmRow {
   listings: number
 }
 interface RevenueLite {
-  contentMrr: number
-  orderRev: number
+  coinTopupRevenue: number
+  coinsOutstanding: number
   sourcingFee: number
   selfSaleFee: number
   groupBuyFee: number
@@ -116,12 +116,8 @@ export default function AdminDashboard() {
                     <div className="value" style={{ fontSize: 20 }}>{won(revenue.sourcingFee)}</div>
                   </Link>
                   <Link to="/admin/revenue" className="stat card-hover" style={{ textDecoration: 'none' }}>
-                    <div className="label">🎬 콘텐츠 구독</div>
-                    <div className="value" style={{ fontSize: 20 }}>{won(revenue.contentMrr)}</div>
-                  </Link>
-                  <Link to="/admin/revenue" className="stat card-hover" style={{ textDecoration: 'none' }}>
-                    <div className="label">➕ 콘텐츠 건별</div>
-                    <div className="value" style={{ fontSize: 20 }}>{won(revenue.orderRev)}</div>
+                    <div className="label">🪙 콘텐츠 예치금 충전</div>
+                    <div className="value" style={{ fontSize: 20 }}>{won(revenue.coinTopupRevenue)}</div>
                   </Link>
                   <Link to="/admin/commerce" className="stat card-hover" style={{ textDecoration: 'none' }}>
                     <div className="label">🏷️ 자체 판매</div>

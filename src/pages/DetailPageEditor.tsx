@@ -160,7 +160,7 @@ export default function DetailPageEditor() {
             />
 
             <Notice tone="info">
-              영상은 <Link to="/admin/studio">AI 영상 생성 스튜디오</Link>에서 만들어 이 상세페이지에 첨부할 수 있어요.
+              영상은 <Link to="/studio">AI 영상 생성 스튜디오</Link>에서 만들어 이 상세페이지에 첨부할 수 있어요.
             </Notice>
 
             {dp.status !== 'published' ? (

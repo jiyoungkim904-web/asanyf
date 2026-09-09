@@ -58,7 +58,7 @@ export default function ShopSubscribe() {
 
         <Notice tone="info">
           이 정기구독은 <b>농산물</b>을 받는 소비자용이에요. 농가가 AI 콘텐츠를 만드는{' '}
-          <Link to="/pricing">콘텐츠 제작 구독</Link>과는 다릅니다.
+          <Link to="/pricing">콘텐츠 제작 예치금(코인)</Link>과는 다릅니다.
         </Notice>
 
         {loading ? (

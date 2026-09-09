@@ -2,34 +2,34 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
-import type { Content, ContentRequest, Entitlement, FarmProduct } from '../lib/types'
+import type { Content, ContentRequest, FarmProduct } from '../lib/types'
 import { ContentCard } from '../components/ContentCard'
 import { Empty, Loading } from '../components/ui'
-import { won } from '../lib/billing'
+import { CONTENT_COIN_COST, coins } from '../lib/billing'
 
 export default function Dashboard() {
   const { farm } = useAuth()
   const [products, setProducts] = useState<FarmProduct[]>([])
   const [requests, setRequests] = useState<ContentRequest[]>([])
   const [contents, setContents] = useState<Content[]>([])
-  const [entitlement, setEntitlement] = useState<Entitlement | null>(null)
+  const [balance, setBalance] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!farm) return
     let alive = true
     const load = async () => {
-      const [p, r, c, e] = await Promise.all([
+      const [p, r, c, w] = await Promise.all([
         api.listProducts(farm.id),
         api.listRequests(farm.id),
         api.listContents(farm.id),
-        api.getEntitlement(farm.id),
+        api.getWallet(farm.id),
       ])
       if (!alive) return
       setProducts(p)
       setRequests(r)
       setContents(c)
-      setEntitlement(e)
+      setBalance(w.balance)
       setLoading(false)
     }
     load()
@@ -106,29 +106,23 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* 이용권 상태 */}
-            {entitlement && (
+            {/* 예치금 상태 */}
+            {balance !== null && (
               <Link
                 to="/billing"
                 className="card card-pad card-hover"
                 style={{ display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none' }}
               >
-                <span style={{ fontSize: 22 }}>
-                  {entitlement.kind === 'subscription' ? '🗓️' : '💳'}
-                </span>
+                <span style={{ fontSize: 22 }}>🪙</span>
                 <div style={{ flex: 1 }}>
-                  <b style={{ color: 'var(--ink)' }}>
-                    {entitlement.kind === 'subscription'
-                      ? `${entitlement.plan.name} 콘텐츠 구독 중`
-                      : '콘텐츠 구독 없음'}
-                  </b>
+                  <b style={{ color: 'var(--ink)' }}>예치금 {coins(balance)}</b>
                   <div className="muted" style={{ fontSize: 14 }}>
-                    {entitlement.kind === 'subscription'
-                      ? `이번 달 콘텐츠 제작 잔여 ${entitlement.remaining}건`
-                      : `콘텐츠 제작은 건별 ${won(entitlement.price)}(예시). 구독하면 더 저렴해요`}
+                    {balance >= CONTENT_COIN_COST
+                      ? `숏폼 영상 약 ${Math.floor(balance / CONTENT_COIN_COST)}건 제작 가능 (1건 ${coins(CONTENT_COIN_COST)})`
+                      : `영상 1건에 ${coins(CONTENT_COIN_COST)} 필요 — 충전이 필요해요`}
                   </div>
                 </div>
-                <span className="muted">관리 →</span>
+                <span className="muted">충전·내역 →</span>
               </Link>
             )}
 

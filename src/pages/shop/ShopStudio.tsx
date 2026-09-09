@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
-import { won } from '../../lib/billing'
+import { CONTENT_COIN_COST, coins, won } from '../../lib/billing'
 import { Art, Button, Loading, Notice } from '../../components/ui'
-import type { Content, Farm, Plan } from '../../lib/types'
+import type { CoinPack, Content, Farm } from '../../lib/types'
 
 const TYPES = [
   { icon: '🖼️', label: '이미지 콘텐츠' },
@@ -14,14 +14,14 @@ const TYPES = [
 
 export default function ShopStudio() {
   const navigate = useNavigate()
-  const [plans, setPlans] = useState<Plan[]>([])
+  const [packs, setPacks] = useState<CoinPack[]>([])
   const [reels, setReels] = useState<{ content: Content; farm: Farm }[]>([])
   const [loading, setLoading] = useState(true)
   const [picked, setPicked] = useState('영상 콘텐츠')
 
   useEffect(() => {
-    Promise.all([api.getPlans(), api.buyer.reels()]).then(([p, r]) => {
-      setPlans(p)
+    Promise.all([api.getCoinPacks(), api.buyer.reels()]).then(([p, r]) => {
+      setPacks(p)
       setReels((r as any[]).slice(0, 3))
       setLoading(false)
     })
@@ -78,44 +78,40 @@ export default function ShopStudio() {
           </div>
         </div>
 
-        {/* 구독 플랜 */}
+        {/* 예치금 충전 팩 */}
         <div className="app-section">
           <div className="sec-head">
-            <h2>구독 플랜</h2>
+            <h2>예치금 충전 팩</h2>
             <span className="badge badge-warn">금액 예시</span>
           </div>
+          <p className="app-sub" style={{ marginTop: -4 }}>
+            월 구독 없이, 코인을 충전해 두고 콘텐츠 1건당 {coins(CONTENT_COIN_COST)}씩 차감돼요.
+          </p>
           <div className="stack" style={{ gap: 12 }}>
-            {plans
-              .filter((p) => p.priceMonthly > 0)
-              .map((p) => (
-                <div className={`plan ${p.recommended ? 'on' : ''}`} key={p.id} style={{ padding: '20px 18px' }}>
-                  {p.recommended && <span className="plan-badge">추천</span>}
-                  <div className="spread">
-                    <span className="plan-name">{p.name}</span>
-                    <span className="plan-price" style={{ fontSize: 22 }}>
-                      {won(p.priceMonthly)}
-                      <small> / 월</small>
-                    </span>
-                  </div>
-                  <ul className="plan-feats" style={{ marginTop: 10 }}>
-                    {p.features.map((f) => (
-                      <li key={f}>{f}</li>
-                    ))}
-                  </ul>
-                  <Button
-                    variant={p.recommended ? 'primary' : 'outline'}
-                    block
-                    style={{ marginTop: 14 }}
-                    onClick={() => navigate('/pricing')}
-                  >
-                    {p.name} 구독하기
-                  </Button>
+            {packs.map((p) => (
+              <div className={`plan ${p.recommended ? 'on' : ''}`} key={p.id} style={{ padding: '20px 18px' }}>
+                {p.recommended && <span className="plan-badge">추천</span>}
+                <div className="spread">
+                  <span className="plan-name">{won(p.won)}</span>
+                  <span className="plan-price" style={{ fontSize: 22 }}>{coins(p.coins + p.bonus)}</span>
                 </div>
-              ))}
+                <ul className="plan-feats" style={{ marginTop: 10 }}>
+                  <li>기본 {coins(p.coins)}</li>
+                  {p.bonus > 0 && <li>보너스 +{coins(p.bonus)}</li>}
+                  <li>숏폼 영상 약 {Math.floor((p.coins + p.bonus) / CONTENT_COIN_COST)}건</li>
+                </ul>
+                <Button
+                  variant={p.recommended ? 'primary' : 'outline'}
+                  block
+                  style={{ marginTop: 14 }}
+                  onClick={() => navigate('/pricing')}
+                >
+                  충전하기
+                </Button>
+              </div>
+            ))}
           </div>
-          <Notice tone="info" >
-            무료 체험(월 2건)으로 먼저 만들어볼 수 있어요.
-          </Notice>
+          <Notice tone="info">가입 시 체험 코인이 지급돼요. 남은 코인은 사라지지 않습니다.</Notice>
         </div>
 
         <div className="app-section">

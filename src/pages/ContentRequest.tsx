@@ -3,10 +3,9 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { aiProvider } from '../lib/ai'
-import { won } from '../lib/billing'
-import type { Content, ContentLength, Entitlement, FarmProduct } from '../lib/types'
+import { CONTENT_COIN_COST, coins } from '../lib/billing'
+import type { Content, ContentLength, FarmProduct } from '../lib/types'
 import { Button, Empty, Loading, Notice, TempOptionTag, VideoThumb } from '../components/ui'
-import { PayModal } from '../components/PayModal'
 import { ScriptScenes } from '../components/ScriptScenes'
 
 type Phase = 'form' | 'progress'
@@ -36,15 +35,14 @@ export default function ContentRequest() {
   const [content, setContent] = useState<Content | null>(null)
   const [previewScript, setPreviewScript] = useState<Content['script'] | null>(null)
   const [previewTitle, setPreviewTitle] = useState('')
-  const [entitlement, setEntitlement] = useState<Entitlement | null>(null)
-  const [showPay, setShowPay] = useState(false)
+  const [balance, setBalance] = useState<number | null>(null)
   const [detailOk, setDetailOk] = useState<boolean | null>(null)
 
   useEffect(() => {
     if (!farm) return
-    Promise.all([api.listProducts(farm.id), api.getEntitlement(farm.id)]).then(([p, ent]) => {
+    Promise.all([api.listProducts(farm.id), api.getWallet(farm.id)]).then(([p, w]) => {
       setProducts(p)
-      setEntitlement(ent)
+      setBalance(w.balance)
       if (!productId && p[0]) setProductId(p[0].id)
       setLoading(false)
     })
@@ -87,12 +85,10 @@ export default function ContentRequest() {
     return () => clearInterval(t)
   }, [phase, content, farm])
 
-  async function submit(payForThis = false) {
+  const enoughCoins = balance !== null && balance >= CONTENT_COIN_COST
+
+  async function submit() {
     if (!farm || !product) return
-    if (entitlement?.kind === 'payg' && !payForThis) {
-      setShowPay(true)
-      return
-    }
     setSubmitting(true)
     setError('')
     try {
@@ -100,32 +96,33 @@ export default function ContentRequest() {
         farmId: farm.id,
         productId: product.id,
         length,
-        payForThis,
       })
       setContent(c)
       setPhase('progress')
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(
+        msg === 'INSUFFICIENT_COINS'
+          ? '코인이 부족해요. 예치금을 먼저 충전해주세요.'
+          : msg,
+      )
     } finally {
       setSubmitting(false)
-      setShowPay(false)
     }
   }
 
-  function entitlementBanner() {
-    if (!entitlement) return null
-    if (entitlement.kind === 'subscription')
+  function coinBanner() {
+    if (balance === null) return null
+    if (enoughCoins)
       return (
         <Notice tone="info">
-          {entitlement.plan.name} 구독 한도에서 <b>1건 차감</b>됩니다. (이번 달 잔여{' '}
-          {entitlement.remaining}건)
+          이 영상 제작에 <b>{coins(CONTENT_COIN_COST)}</b> 차감됩니다. (현재 잔액 {coins(balance)})
         </Notice>
       )
     return (
       <Notice tone="warn">
-        콘텐츠 구독이 없거나 한도를 모두 사용했어요. 이 콘텐츠는 건별 <b>{won(entitlement.price)}</b>(예시)이
-        결제됩니다.{' '}
-        <Link to="/pricing">구독하면 더 저렴해요 →</Link>
+        예치금이 부족해요. 영상 1건에 <b>{coins(CONTENT_COIN_COST)}</b> 필요, 현재 {coins(balance)}.{' '}
+        <Link to="/billing">코인 충전하기 →</Link>
       </Notice>
     )
   }
@@ -166,7 +163,7 @@ export default function ContentRequest() {
             {/* 왼쪽: 입력 */}
             <div className="card card-pad stack" style={{ gap: 22 }}>
               {error && <Notice tone="danger">{error}</Notice>}
-              {entitlementBanner()}
+              {coinBanner()}
 
               <div className="field">
                 <label>농산물 선택</label>
@@ -210,18 +207,13 @@ export default function ContentRequest() {
                   <button type="button" className="choice selected">
                     🧩 농가 사진·영상 기반 템플릿 조립
                   </button>
-                  <button
-                    type="button"
-                    className="choice"
-                    disabled
-                    title="완전 생성형 AI 영상은 프리미엄 로드맵으로 준비 중입니다"
-                  >
-                    ✨ 완전 생성형 AI 영상 (프리미엄, 준비 중)
-                  </button>
+                  <Link to="/studio" className="choice" style={{ textDecoration: 'none' }}>
+                    ✨ 완전 생성형 AI 영상 (직접 생성) →
+                  </Link>
                 </div>
                 <span className="hint">
-                  AI가 스크립트·자막·씬 구성을 만들고, 농가가 올린 실제 사진으로 영상을 조립합니다. 완전
-                  합성 영상 생성은 추후 프리미엄 옵션으로 제공될 예정이에요.
+                  이 화면은 AI가 스크립트·자막·씬을 만들고 농가 사진으로 조립합니다. 완전 합성 영상은{' '}
+                  <Link to="/studio">AI 영상 생성 스튜디오</Link>에서 내 OpenRouter 키로 직접 만들 수 있어요.
                 </span>
               </div>
 
@@ -246,10 +238,16 @@ export default function ContentRequest() {
                 </span>
               </div>
 
-              <Button size="lg" block onClick={() => submit()} loading={submitting}>
-                {entitlement?.kind === 'payg'
-                  ? `결제하고 콘텐츠 제작 요청 (${won(entitlement.price)})`
-                  : '콘텐츠 제작 요청하기'}
+              <Button
+                size="lg"
+                block
+                onClick={() => submit()}
+                loading={submitting}
+                disabled={balance !== null && !enoughCoins}
+              >
+                {balance !== null && !enoughCoins
+                  ? '예치금 부족 — 충전 필요'
+                  : `콘텐츠 제작 요청하기 (${coins(CONTENT_COIN_COST)} 차감)`}
               </Button>
             </div>
 
@@ -281,17 +279,6 @@ export default function ContentRequest() {
           <ProgressView content={content!} onNavigate={navigate} />
         )}
       </div>
-
-      {showPay && entitlement?.kind === 'payg' && (
-        <PayModal
-          title="콘텐츠 1건 제작"
-          amount={entitlement.price}
-          note={`${product?.name ?? '농산물'} · SNS 숏폼 ${length === '15s' ? '15초' : '30초'}`}
-          confirmLabel="결제하고 제작 요청"
-          onConfirm={() => submit(true)}
-          onClose={() => setShowPay(false)}
-        />
-      )}
     </div>
   )
 }

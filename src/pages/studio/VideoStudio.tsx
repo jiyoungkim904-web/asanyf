@@ -3,13 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { Button, Field, Loading, Notice } from '../../components/ui'
 import { DetailVideoPlayer } from '../../components/DetailVideoPlayer'
-import {
-  clearStoredKey,
-  hasStoredKey,
-  saveKey,
-  storedKeyHint,
-  unlockKey,
-} from '../../lib/secureKey'
+import { clearStoredKey, loadKey, saveKey } from '../../lib/secureKey'
 import {
   createVideoJob,
   estimateCost,
@@ -37,8 +31,6 @@ interface DpRow {
   product?: FarmProduct
 }
 
-type KeyState = 'none' | 'locked' | 'unlocked'
-
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const r = new FileReader()
@@ -49,86 +41,68 @@ function fileToDataUrl(file: File): Promise<string> {
 }
 
 export default function VideoStudio() {
-  const [keyState, setKeyState] = useState<KeyState>(hasStoredKey() ? 'locked' : 'none')
   const [apiKey, setApiKey] = useState<string | null>(null)
-  const inAdmin = useLocation().pathname.startsWith('/admin')
+  const [loading, setLoading] = useState(true)
+  const { pathname } = useLocation()
+  const back = pathname.startsWith('/admin')
+    ? { to: '/admin', label: '← 운영자 대시보드' }
+    : pathname === '/studio'
+      ? { to: '/dashboard', label: '← 농가 대시보드' }
+      : { to: '/', label: '← 영팜마켓AI 홈' }
+
+  useEffect(() => {
+    loadKey()
+      .then((k) => setApiKey(k))
+      .finally(() => setLoading(false))
+  }, [])
 
   return (
     <div className="page">
       <div className="container stack" style={{ gap: 22, maxWidth: 900 }}>
         <div>
-          <Link to={inAdmin ? '/admin' : '/'} className="back-link">
-            {inAdmin ? '← 운영자 대시보드' : '← 영팜마켓AI 홈'}
+          <Link to={back.to} className="back-link">
+            {back.label}
           </Link>
           <h1 className="section-title" style={{ fontSize: 24 }}>
             AI 영상 생성 스튜디오 <span className="badge badge-info">OpenRouter 연동</span>
           </h1>
           <p className="muted">
             텍스트·이미지를 넣으면 OpenRouter의 비디오 생성 모델로 실제 영상을 만듭니다. 내 OpenRouter API
-            키를 브라우저에 암호화해 보관하고, 호출은 HTTPS로 OpenRouter에만 전송됩니다.
+            키를 이 브라우저에 암호화해 보관하고, 호출은 HTTPS로 OpenRouter에만 전송됩니다.
           </p>
         </div>
 
-        {keyState === 'none' && (
-          <KeySetup
-            onDone={(k) => {
-              setApiKey(k)
-              setKeyState('unlocked')
-            }}
-          />
-        )}
-
-        {keyState === 'locked' && (
-          <KeyUnlock
-            onUnlock={(k) => {
-              setApiKey(k)
-              setKeyState('unlocked')
-            }}
-            onForget={() => {
-              clearStoredKey()
-              setKeyState('none')
-            }}
-          />
-        )}
-
-        {keyState === 'unlocked' && apiKey && (
+        {loading ? (
+          <Loading />
+        ) : apiKey ? (
           <Generator
             apiKey={apiKey}
-            onLock={() => {
+            onForget={async () => {
+              await clearStoredKey()
               setApiKey(null)
-              setKeyState(hasStoredKey() ? 'locked' : 'none')
-            }}
-            onForget={() => {
-              clearStoredKey()
-              setApiKey(null)
-              setKeyState('none')
             }}
           />
+        ) : (
+          <KeySetup onDone={(k) => setApiKey(k)} />
         )}
       </div>
     </div>
   )
 }
 
-// ── 키 최초 등록 ─────────────────────────────────────────────
+// ── 키 등록 ─────────────────────────────────────────────────
 
 function KeySetup({ onDone }: { onDone: (apiKey: string) => void }) {
   const [apiKey, setApiKey] = useState('')
-  const [pass, setPass] = useState('')
-  const [pass2, setPass2] = useState('')
-  const [hint, setHint] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
 
   async function submit() {
     setErr('')
     if (!apiKey.trim()) return setErr('OpenRouter API 키를 입력해주세요.')
-    if (pass.length < 4) return setErr('패스프레이즈는 4자 이상이어야 합니다.')
-    if (pass !== pass2) return setErr('패스프레이즈가 서로 다릅니다.')
     setBusy(true)
     try {
-      const clean = apiKey.replace(/[^\x21-\x7E]/g, '')
-      await saveKey(clean, pass, hint.trim() || undefined)
+      const clean = await saveKey(apiKey)
       onDone(clean)
     } catch (e) {
       setErr((e as Error).message)
@@ -139,10 +113,10 @@ function KeySetup({ onDone }: { onDone: (apiKey: string) => void }) {
 
   return (
     <div className="card card-pad stack" style={{ gap: 16 }}>
-      <b style={{ fontSize: 16 }}>1) OpenRouter API 키 등록</b>
+      <b style={{ fontSize: 16 }}>OpenRouter API 키 등록</b>
       <Notice tone="info">
-        키는 <b>패스프레이즈로 AES-GCM 암호화</b>되어 이 브라우저의 localStorage에만 저장됩니다. 평문 키는
-        디스크에 남지 않고, 새로고침하면 패스프레이즈로 다시 잠금 해제해야 합니다.{' '}
+        키는 <b>이 브라우저 전용 키로 AES-GCM 암호화</b>되어 저장됩니다. 평문 키는 디스크에 남지 않고,
+        같은 브라우저에서는 자동으로 불러와요(다시 입력할 필요 없음).{' '}
         <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer">
           키 발급 →
         </a>
@@ -155,98 +129,13 @@ function KeySetup({ onDone }: { onDone: (apiKey: string) => void }) {
           placeholder="sk-or-v1-..."
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
-          autoComplete="off"
-        />
-      </Field>
-      <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 190 }}>
-          <Field label="패스프레이즈" required>
-            <input
-              className="input"
-              type="password"
-              value={pass}
-              onChange={(e) => setPass(e.target.value)}
-              autoComplete="new-password"
-            />
-          </Field>
-        </div>
-        <div style={{ flex: 1, minWidth: 190 }}>
-          <Field label="패스프레이즈 확인" required>
-            <input
-              className="input"
-              type="password"
-              value={pass2}
-              onChange={(e) => setPass2(e.target.value)}
-              autoComplete="new-password"
-            />
-          </Field>
-        </div>
-      </div>
-      <Field label="힌트 (선택)" hint="패스프레이즈 자체가 아니라 떠올릴 단서만 적으세요.">
-        <input className="input" value={hint} onChange={(e) => setHint(e.target.value)} />
-      </Field>
-      <div>
-        <Button onClick={submit} loading={busy}>
-          암호화해서 저장
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-// ── 잠금 해제 ───────────────────────────────────────────────
-
-function KeyUnlock({
-  onUnlock,
-  onForget,
-}: {
-  onUnlock: (apiKey: string) => void
-  onForget: () => void
-}) {
-  const [pass, setPass] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [err, setErr] = useState('')
-  const hint = storedKeyHint()
-
-  async function submit() {
-    setErr('')
-    setBusy(true)
-    try {
-      const k = await unlockKey(pass)
-      onUnlock(k)
-    } catch (e) {
-      setErr((e as Error).message)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <div className="card card-pad stack" style={{ gap: 16 }}>
-      <b style={{ fontSize: 16 }}>저장된 키 잠금 해제</b>
-      {hint && <p className="muted" style={{ fontSize: 13 }}>힌트: {hint}</p>}
-      {err && <Notice tone="danger">{err}</Notice>}
-      <Field label="패스프레이즈" required>
-        <input
-          className="input"
-          type="password"
-          value={pass}
-          onChange={(e) => setPass(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && submit()}
           autoComplete="off"
         />
       </Field>
-      <div className="row" style={{ gap: 10 }}>
+      <div>
         <Button onClick={submit} loading={busy}>
-          잠금 해제
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            if (confirm('저장된 암호화 키를 삭제할까요? 다시 등록해야 합니다.')) onForget()
-          }}
-        >
-          저장된 키 삭제
+          저장하고 시작
         </Button>
       </div>
     </div>
@@ -261,15 +150,7 @@ interface Frame {
   name: string
 }
 
-function Generator({
-  apiKey,
-  onLock,
-  onForget,
-}: {
-  apiKey: string
-  onLock: () => void
-  onForget: () => void
-}) {
+function Generator({ apiKey, onForget }: { apiKey: string; onForget: () => void }) {
   const [models, setModels] = useState<VideoModel[] | null>(null)
   const [modelsErr, setModelsErr] = useState('')
   const [modelId, setModelId] = useState('')
@@ -425,22 +306,17 @@ function Generator({
     <div className="stack" style={{ gap: 18 }}>
       <div className="card card-pad row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
         <span className="muted" style={{ fontSize: 13 }}>
-          🔓 키 잠금 해제됨 (이 세션 메모리에만 있음)
+          🔐 API 키가 이 브라우저에 암호화 저장돼 있어요
         </span>
-        <div className="row" style={{ gap: 8 }}>
-          <Button size="sm" variant="outline" onClick={onLock}>
-            키 잠그기
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              if (confirm('저장된 암호화 키를 삭제할까요?')) onForget()
-            }}
-          >
-            키 삭제
-          </Button>
-        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            if (confirm('저장된 API 키를 삭제할까요? 다시 입력해야 합니다.')) onForget()
+          }}
+        >
+          키 삭제
+        </Button>
       </div>
 
       {modelsErr && (

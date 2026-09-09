@@ -2,13 +2,8 @@ import { useState } from 'react'
 
 /**
  * 랜딩 히어로의 "콘텐츠 미리보기" 핸드폰 목업.
- * public/hero-preview.jpg 가 있으면 그 이미지를 숏폼 미리보기로 보여주고,
- * 없으면 자연 배경 + 이모지 플레이스홀더로 대체된다.
- */
-/**
- * public/hero-preview.jpg 가 없을 때만 보이는 대체 장면.
- * 실제 산지 방문 사진이 있다면 그 파일을 public/hero-preview.jpg 로 넣으면
- * 이 일러스트 대신 실제 사진이 표시된다.
+ * 서영왔서영 산지 방문 컷(public/syoung.jpg)을 숏폼 미리보기로 보여주고,
+ * 이미지 로드 실패 시 아래 OrchardScene 일러스트로 대체된다.
  */
 function OrchardScene() {
   return (
@@ -87,8 +82,9 @@ export function HeroPhone() {
         <div className="phone-video">
           {imgOk ? (
             <img
-              src="/hero-preview.jpg"
-              alt="AI가 만든 아산 배 농가 숏폼 영상 미리보기"
+              src="/syoung.jpg"
+              alt="서영왔서영 — 아산 배 농가를 찾아간 서영"
+              style={{ objectPosition: 'center 24%' }}
               onError={() => setImgOk(false)}
             />
           ) : (

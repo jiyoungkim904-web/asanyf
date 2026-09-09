@@ -30,7 +30,7 @@ npm run dev      # http://localhost:3047
 ### 농가
 랜딩(`/`) → 회원가입(`/signup`) → 농산물 등록(6단계: 기본정보·재배정보·농가이야기·판매배송·사진·확인 — 등급·인증·재배경력·당도·가격대·배송·보관법 등 구조화 입력)
 → **AI 상세페이지 생성·확인·확정**(`/products/:id/detail`) — 원본 데이터를 판매용 페이지로 정리
-→ 상세페이지를 토대로 AI 숏폼 영상 요청(`/content/request`, 약 18초 자동 진행)
+→ 예치금(코인) 충전(`/billing`, 없으면 제작 불가) → 상세페이지를 토대로 AI 숏폼 영상 요청(`/content/request`, 코인 차감, 약 18초 자동 진행)
 → 검수 대기 → (운영자 승인 후) 콘텐츠 상세(`/contents/:id`) → 영상 다운로드
 ※ 확정된 상세페이지는 스토어 상품 상세(`/shop/product/:id`)에도 그대로 노출됨
 
@@ -70,24 +70,27 @@ npx tsx scripts/flow.tsx    # 데이터 흐름·권한 분리 시나리오
 | 라인 | 요율 (예시) | 정책값 |
 |---|---|---|
 | 유통 소싱 수수료 | 거래액 3~7% | `SOURCING_FEE_RATE` |
-| AI 콘텐츠 SaaS 구독 | 기본형 99,000 / 고급형 199,000 | `PLANS` |
+| AI 콘텐츠 예치금(코인) | 코인 충전액이 매출 (충전 팩 + 보너스) | `COIN_PACKS`, `CONTENT_COIN_COST` |
 | 공동구매·라이브커머스 수수료 | 판매액 5~15% | `COMMERCE_FEE_RATE` |
 | PB·브랜드 / 정기구독 | 마진 15~35% / 수수료 10% | `PB_MARGIN_RATE`, `SUBSCRIPTION_FEE_RATE` |
-| 건별 부가서비스 | 촬영·편집 건별 | `ORDER_PRICE` |
+| 건별 부가서비스 | 촬영·편집 코인 차감 | `ORDER_COIN_PRICE` |
 
 ## 수익모델(BM) — 5가지
 
-**① AI 콘텐츠 제작이 메인.** 콘텐츠 요청 시 이용권 자동 판정: **콘텐츠 구독 잔여 → 없으면 건별 결제**.
+**① AI 콘텐츠 제작이 메인.** 구독제 폐지 → **예치금(코인)**: 농가가 코인을 미리 충전해 두고,
+숏폼 영상 1건 제작 시 `CONTENT_COIN_COST` 코인, 부가서비스는 `ORDER_COIN_PRICE` 코인이 차감된다.
+큰 금액을 충전하면 보너스 코인(`COIN_PACKS[].bonus`)을 더 준다. 가입 시 체험 코인(`WELCOME_COINS`) 지급.
+잔액 부족이면 `INSUFFICIENT_COINS`. 남은 코인은 소멸하지 않는다. `coinWallets`/`coinTxns`로 관리.
 
 | BM | 농가 화면 | 구매자 화면 | 관리자 화면 | 정책값 (`src/lib/billing.ts`) |
 |---|---|---|---|---|
-| ① AI 콘텐츠 제작 구독 | `/pricing` `/billing` | — | `/admin/revenue` | `PLANS`, `PAYG_CONTENT_PRICE` |
+| ① AI 콘텐츠 예치금(코인) | `/pricing` `/billing` | — | `/admin/revenue` | `COIN_PACKS`, `CONTENT_COIN_COST`, `ORDER_COIN_PRICE` |
 | ② 사이트 내 자체 판매 | `/store` 상품 등록 | `/shop` → `/cart` → 결제 | `/admin/commerce` | `COMMERCE_FEE_RATE`, `SHIPPING_FEE` |
 | ③ 공동구매 | `/store` 공구 열기 | `/shop/groupbuy` 참여 | `/admin/commerce` | `GROUPBUY_DEFAULT_*` |
 | ④ 농산물 정기구독(B2C) | `/store` 구독자 관리 | `/shop/subscribe` 신청 | `/admin/commerce` | `PRODUCE_BOX_PRICE`, `SUBSCRIPTION_FEE_RATE` |
-| ⑤ 건별 부가서비스 | `/billing` 주문 | — | `/admin/revenue` | `ORDER_PRICE` |
+| ⑤ 건별 부가서비스 | `/billing` 주문 | — | `/admin/revenue` | `ORDER_COIN_PRICE` |
 
-> **"AI 콘텐츠 제작 구독"(농가)** 과 **"농산물 정기구독"(소비자)** 은 완전히 별개입니다.
+> **"AI 콘텐츠 예치금(코인)"(농가)** 과 **"농산물 정기구독"(소비자)** 은 완전히 별개입니다.
 
 모든 금액·수수료율은 미확정이라 화면에 **"예시"**로 표기하며 `src/lib/billing.ts` 한 곳에서 바꿉니다. 결제는 전부 mock(`PayModal`). 데모 구매자 계정: `buyer@example.com` / `test1234`.
 
@@ -137,12 +140,15 @@ export const aiProvider: AIProvider = new RealVideoApiProvider(import.meta.env.V
 데모 파이프라인과 별개로, **내 OpenRouter API 키로 실제 비디오 생성 모델**(Veo·Sora·Seedance·Wan 등)을
 호출해 영상을 만드는 도구입니다.
 
-**진입 경로**: 운영자 로그인 → 상단 헤더 **"영상 생성"**(`/admin/studio`).
-(공개 링크 `/studio/video`, 구매자 앱 `/shop/studio` → "AI 영상 생성 스튜디오 열기" 도 같은 화면)
+**진입 경로** (모두 같은 `VideoStudio` 화면):
+- 랜딩 `/` → "🎬 AI로 직접 영상 만들어보기" → `/studio/video` (공개)
+- 농가 로그인 → 헤더 **"영상 제작"** → `/studio`
+- 운영자 로그인 → 헤더 **"영상 생성"** → `/admin/studio`
+- 구매자 앱 `/shop/studio` → "AI 영상 생성 스튜디오 열기"
 
-1. **키 등록** — 브라우저에서 OpenRouter 키 + 패스프레이즈 입력
-   → PBKDF2(SHA-256, 210k) → **AES-GCM 256으로 암호화**해 `localStorage`에 저장.
-   평문 키는 디스크에 남지 않음. 새로고침하면 패스프레이즈로 잠금 해제.
+1. **키 등록** — 브라우저에서 OpenRouter 키 입력 → **이 브라우저 전용 AES-GCM 키**(non-extractable,
+   IndexedDB)로 암호화해 `localStorage`에 저장. 평문 키는 디스크에 남지 않고, 같은 브라우저에서는
+   자동으로 불러옴(패스프레이즈 없음).
 2. **모델 선택** — `GET /api/v1/videos/models` 로 모델·가격(`pricing_skus`)을 받아 목록화, 옆에 단가 표시.
 3. **입력** — 텍스트 프롬프트 + 이미지(시작/끝 프레임, base64 data URI로 `frame_images[]` 전달).
    모델별 지원 길이·해상도·화면비를 자동으로 선택지로 노출. 예상 비용 추정.
@@ -161,7 +167,7 @@ export const aiProvider: AIProvider = new RealVideoApiProvider(import.meta.env.V
 
 | 구간 | 처리 |
 | --- | --- |
-| 저장(at-rest) | 패스프레이즈 파생 키로 AES-GCM 암호화 → `localStorage`. 평문 미저장. |
+| 저장(at-rest) | 브라우저 전용 non-extractable AES-GCM 키(IndexedDB)로 암호화 → `localStorage`. 평문 미저장. |
 | 전송(in-transit) | 평문 키는 오직 `https://openrouter.ai` 로만, HTTPS(TLS) 위에서 전송. |
 | 메모리 | 잠금 해제된 키는 React state 에만. "키 잠그기 / 키 삭제" 제공. |
 | CORS | 브라우저 직접 호출 차단 시 안내 노출. 배포 환경은 얇은 프록시가 필요할 수 있음. |

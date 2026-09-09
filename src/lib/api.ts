@@ -10,17 +10,17 @@ import { aiProvider } from './ai'
 import { read, uid, update } from './db'
 import {
   COMMERCE_FEE_RATE,
-  ORDER_PRICE,
-  PAYG_CONTENT_PRICE,
-  PLANS,
+  CONTENT_COIN_COST,
+  COIN_PACKS,
+  ORDER_COIN_PRICE,
   PRODUCE_BOX_PRICE,
   SHIPPING_FEE,
   SOURCING_FEE_RATE,
   SUBSCRIPTION_FEE_RATE,
   GROUPBUY_DEFAULT_DAYS,
   GROUPBUY_DEFAULT_TARGET,
-  orderRevenue,
-  planById,
+  WELCOME_COINS,
+  coinPackById,
 } from './billing'
 import type {
   Buyer,
@@ -28,21 +28,21 @@ import type {
   ContentLength,
   ContentRequest,
   ContentStatus,
+  CoinTxnType,
   DetailPage,
   DetailVideo,
-  Entitlement,
   Farm,
   FarmProduct,
   GroupBuy,
   Listing,
   Order,
   OrderType,
-  PlanId,
   ProducePlan,
   ProduceSub,
   ShopOrder,
   SourcingRequest,
 } from './types'
+import { ORDER_LABEL } from './types'
 
 const IN_PROGRESS: ContentStatus[] = ['requested', 'analyzing', 'scripting', 'producing']
 
@@ -74,15 +74,39 @@ function tick() {
   })
 }
 
-/** 콘텐츠 1건을 무엇으로 만들 수 있는지: 구독 잔여 → 없으면 건별 결제 */
-function resolveEntitlement(db: ReturnType<typeof read>, farmId: string): Entitlement {
-  const sub = db.subscriptions.find((s) => s.farmId === farmId && s.status === 'active')
-  if (sub) {
-    const plan = planById(sub.planId)
-    const remaining = plan.monthlyQuota - sub.usedThisCycle
-    if (remaining > 0) return { kind: 'subscription', plan, remaining }
+// ── 코인 지갑 ────────────────────────────────────────────────
+
+function walletBalance(db: ReturnType<typeof read>, farmId: string): number {
+  return db.coinWallets.find((w) => w.farmId === farmId)?.balance ?? 0
+}
+
+/** 코인을 차감(음수)하거나 적립(양수)한다. 잔액 부족이면 INSUFFICIENT_COINS 예외. */
+function moveCoins(
+  d: ReturnType<typeof read>,
+  farmId: string,
+  delta: number,
+  type: CoinTxnType,
+  memo: string,
+  extra: { refId?: string; wonPaid?: number } = {},
+): number {
+  let w = d.coinWallets.find((x) => x.farmId === farmId)
+  if (!w) {
+    w = { farmId, balance: 0, updatedAt: new Date().toISOString() }
+    d.coinWallets.push(w)
   }
-  return { kind: 'payg', price: PAYG_CONTENT_PRICE }
+  if (delta < 0 && w.balance + delta < 0) {
+    const e = new Error('INSUFFICIENT_COINS') as Error & { needed: number; balance: number }
+    e.needed = -delta
+    e.balance = w.balance
+    throw e
+  }
+  w.balance += delta
+  w.updatedAt = new Date().toISOString()
+  d.coinTxns.push({
+    id: uid('ctx'), farmId, type, amount: delta, balanceAfter: w.balance, memo,
+    refId: extra.refId, wonPaid: extra.wonPaid, createdAt: w.updatedAt,
+  })
+  return w.balance
 }
 
 const commerceFee = (goods: number) => Math.round(goods * COMMERCE_FEE_RATE)
@@ -97,7 +121,10 @@ export const api = {
     if (db.farms.some((f) => f.email.toLowerCase() === input.email.toLowerCase()))
       throw new Error('이미 가입된 이메일입니다. 로그인해 주세요.')
     const farm: Farm = { ...input, id: uid('farm'), createdAt: new Date().toISOString() }
-    update((d) => d.farms.push(farm))
+    update((d) => {
+      d.farms.push(farm)
+      moveCoins(d, farm.id, WELCOME_COINS, 'bonus', '가입 축하 체험 코인')
+    })
     return net(farm)
   },
 
@@ -229,24 +256,24 @@ export const api = {
     tick()
     return net(read().contents.find((c) => c.id === contentId && c.farmId === farmId))
   },
-  async getEntitlement(farmId: string): Promise<Entitlement> {
-    return net(resolveEntitlement(read(), farmId))
+  /** 콘텐츠 1건 제작 비용(코인) */
+  contentCoinCost() {
+    return CONTENT_COIN_COST
   },
 
   async requestContent(input: {
     farmId: string
     productId: string
     length: ContentLength
-    payForThis?: boolean
   }): Promise<{ request: ContentRequest; content: Content }> {
     const db = read()
     const product = db.products.find((p) => p.id === input.productId && p.farmId === input.farmId)
     if (!product) throw new Error('농산물을 찾을 수 없습니다.')
 
-    const ent = resolveEntitlement(db, input.farmId)
-    if (ent.kind === 'payg' && !input.payForThis) {
-      const e = new Error('PAYG_REQUIRED') as Error & { entitlement: Entitlement }
-      e.entitlement = ent
+    if (walletBalance(db, input.farmId) < CONTENT_COIN_COST) {
+      const e = new Error('INSUFFICIENT_COINS') as Error & { needed: number; balance: number }
+      e.needed = CONTENT_COIN_COST
+      e.balance = walletBalance(db, input.farmId)
       throw e
     }
 
@@ -263,80 +290,73 @@ export const api = {
     const content: Content = {
       id: uid('cnt'), requestId, farmId: input.farmId, productId: input.productId,
       title, status: 'analyzing', length: input.length, createdAt, script,
-      posterPhoto: product.photos[0], auto: true, coveredBy: ent.kind,
+      posterPhoto: product.photos[0], auto: true, coinCost: CONTENT_COIN_COST,
       detailPageId: detail?.id, assemblyMode: 'template',
     }
     update((d) => {
       d.requests.push(request)
       d.contents.push(content)
-      if (ent.kind === 'subscription') {
-        const s = d.subscriptions.find((x) => x.farmId === input.farmId && x.status === 'active')
-        if (s) s.usedThisCycle += 1
-      } else {
-        d.orders.push({
-          id: uid('ord'), farmId: input.farmId, type: 'extra_content', amount: PAYG_CONTENT_PRICE,
-          status: 'paid', memo: `콘텐츠 제작 (${product.name})`, relatedProductId: product.id, createdAt,
-        })
-      }
+      moveCoins(d, input.farmId, -CONTENT_COIN_COST, 'spend', `숏폼 영상 (${product.name})`, {
+        refId: content.id,
+      })
     })
     return { request, content }
   },
 
-  // ── ① AI 콘텐츠 구독 / ⑤ 건별 부가서비스 ─────────────────
+  // ── ① AI 콘텐츠 예치금(코인) / ⑤ 건별 부가서비스 ────────
 
-  async getPlans() {
-    return net(PLANS)
+  getCoinPacks() {
+    return net(COIN_PACKS)
   },
 
-  async getBilling(farmId: string) {
+  async getWallet(farmId: string) {
     tick()
     const db = read()
-    const sub = db.subscriptions.find((s) => s.farmId === farmId && s.status === 'active')
-    const plan = sub ? planById(sub.planId) : null
     return net({
-      subscription: sub ?? null,
-      plan,
-      quotaRemaining: sub && plan ? Math.max(0, plan.monthlyQuota - sub.usedThisCycle) : 0,
-      orders: db.orders.filter((o) => o.farmId === farmId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-      entitlement: resolveEntitlement(db, farmId),
+      balance: walletBalance(db, farmId),
+      txns: db.coinTxns
+        .filter((t) => t.farmId === farmId)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+      contentCoinCost: CONTENT_COIN_COST,
+      orderCoinPrice: ORDER_COIN_PRICE,
     })
   },
 
-  async subscribe(farmId: string, planId: PlanId) {
-    const now = new Date()
-    const renews = new Date(now)
-    renews.setMonth(renews.getMonth() + 1)
-    update((d) => {
-      const existing = d.subscriptions.find((s) => s.farmId === farmId)
-      if (existing) {
-        existing.planId = planId
-        existing.status = 'active'
-        existing.renewsAt = renews.toISOString()
-      } else {
-        d.subscriptions.push({
-          id: uid('sub'), farmId, planId, status: 'active',
-          startedAt: now.toISOString(), renewsAt: renews.toISOString(), usedThisCycle: 0,
-        })
-      }
-    })
-    return net(true)
+  /** getBilling 별칭 유지 (예치금 화면용) */
+  async getBilling(farmId: string) {
+    return this.getWallet(farmId)
   },
 
-  async cancelSubscription(farmId: string) {
+  async topUpWallet(farmId: string, packId: string) {
+    const pack = coinPackById(packId)
+    if (!pack) throw new Error('충전 팩을 찾을 수 없습니다.')
+    let balance = 0
     update((d) => {
-      const s = d.subscriptions.find((x) => x.farmId === farmId && x.status === 'active')
-      if (s) s.status = 'canceled'
+      balance = moveCoins(d, farmId, pack.coins, 'topup', `${pack.won.toLocaleString('ko-KR')}원 충전팩`, {
+        wonPaid: pack.won,
+      })
+      if (pack.bonus > 0) balance = moveCoins(d, farmId, pack.bonus, 'bonus', '충전 보너스')
     })
-    return net(true)
+    return net({ balance })
   },
 
   async createOrder(input: { farmId: string; type: OrderType; memo?: string; relatedProductId?: string }) {
+    const cost = ORDER_COIN_PRICE[input.type]
+    if (walletBalance(read(), input.farmId) < cost) {
+      const e = new Error('INSUFFICIENT_COINS') as Error & { needed: number; balance: number }
+      e.needed = cost
+      e.balance = walletBalance(read(), input.farmId)
+      throw e
+    }
     const order: Order = {
-      id: uid('ord'), farmId: input.farmId, type: input.type, amount: ORDER_PRICE[input.type],
+      id: uid('ord'), farmId: input.farmId, type: input.type, amount: cost,
       status: 'paid', memo: input.memo, relatedProductId: input.relatedProductId,
       createdAt: new Date().toISOString(),
     }
-    update((d) => d.orders.push(order))
+    update((d) => {
+      d.orders.push(order)
+      moveCoins(d, input.farmId, -cost, 'spend', ORDER_LABEL[input.type], { refId: order.id })
+    })
     return net(order)
   },
 
@@ -899,9 +919,14 @@ export const api = {
     async revenue() {
       tick()
       const db = read()
-      const activeSubs = db.subscriptions.filter((s) => s.status === 'active')
-      const contentMrr = activeSubs.reduce((n, s) => n + planById(s.planId).priceMonthly, 0)
-      const orderRev = orderRevenue(db.orders)
+      // AI 콘텐츠 매출 = 코인 충전으로 실제 결제된 원화 (구독제 폐지)
+      const coinTopupRevenue = db.coinTxns
+        .filter((t) => t.type === 'topup')
+        .reduce((n, t) => n + (t.wonPaid ?? 0), 0)
+      const coinsOutstanding = db.coinWallets.reduce((n, w) => n + w.balance, 0)
+      const coinsSpent = db.coinTxns
+        .filter((t) => t.type === 'spend')
+        .reduce((n, t) => n - t.amount, 0)
 
       const valid = db.shopOrders.filter((o) => o.status !== 'canceled')
       const singleFee = valid.filter((o) => o.kind === 'single').reduce((n, o) => n + o.platformFee, 0)
@@ -913,23 +938,24 @@ export const api = {
       const sourcingGmv = validSrc.reduce((n, s) => n + s.amount, 0)
 
       return net({
-        contentMrr,
-        orderRev,
+        coinTopupRevenue,
+        coinsOutstanding,
+        coinsSpent,
         sourcingFee,
         sourcingGmv,
         selfSaleFee: singleFee,
         groupBuyFee: groupFee,
         produceSubFee: produceFee,
         commerceGmv: gmv,
-        total: contentMrr + orderRev + sourcingFee + singleFee + groupFee + produceFee,
-        subsByPlan: PLANS.map((pl) => ({ plan: pl, count: activeSubs.filter((s) => s.planId === pl.id).length })),
-        subscribers: activeSubs.map((s) => ({
-          farm: db.farms.find((f) => f.id === s.farmId)!,
-          plan: planById(s.planId), used: s.usedThisCycle, renewsAt: s.renewsAt,
-        })),
-        contentOrders: db.orders
-          .map((o) => ({ order: o, farm: db.farms.find((f) => f.id === o.farmId)! }))
-          .sort((a, b) => b.order.createdAt.localeCompare(a.order.createdAt)),
+        total: coinTopupRevenue + sourcingFee + singleFee + groupFee + produceFee,
+        wallets: db.coinWallets
+          .map((w) => ({ farm: db.farms.find((f) => f.id === w.farmId)!, balance: w.balance }))
+          .filter((r) => r.farm)
+          .sort((a, b) => b.balance - a.balance),
+        coinLedger: db.coinTxns
+          .map((t) => ({ txn: t, farm: db.farms.find((f) => f.id === t.farmId)! }))
+          .filter((r) => r.farm)
+          .sort((a, b) => b.txn.createdAt.localeCompare(a.txn.createdAt)),
       })
     },
 

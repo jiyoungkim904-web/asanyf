@@ -94,6 +94,7 @@ export default function App() {
         <Route path="/products/:id" element={<RequireFarm><ProductHub /></RequireFarm>} />
         <Route path="/products/:id/detail" element={<RequireFarm><DetailPageEditor /></RequireFarm>} />
         <Route path="/content/request" element={<RequireFarm><ContentRequest /></RequireFarm>} />
+        <Route path="/studio" element={<RequireFarm><VideoStudio /></RequireFarm>} />
         <Route path="/contents" element={<RequireFarm><Contents /></RequireFarm>} />
         <Route path="/contents/:id" element={<RequireFarm><ContentDetail /></RequireFarm>} />
         <Route path="/billing" element={<RequireFarm><BillingPage /></RequireFarm>} />

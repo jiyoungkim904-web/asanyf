@@ -81,8 +81,9 @@ export function FarmLayout({ children }: { children: ReactNode }) {
           <nav className="header-nav">
             <NavLink to="/dashboard">대시보드</NavLink>
             <NavLink to="/contents">콘텐츠</NavLink>
+            <NavLink to="/studio">영상 제작</NavLink>
             <NavLink to="/store">판매</NavLink>
-            <NavLink to="/billing">결제·구독</NavLink>
+            <NavLink to="/billing">예치금</NavLink>
             <button
               className="btn btn-ghost btn-sm"
               onClick={() => {

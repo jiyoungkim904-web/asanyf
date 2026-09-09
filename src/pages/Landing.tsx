@@ -48,9 +48,6 @@ export default function Landing() {
               <LinkButton to="/signup" variant="primary" size="lg">
                 농가·셀러 회원가입
               </LinkButton>
-              <LinkButton to="/studio/video" variant="outline" size="lg">
-                🎬 AI 영상 만들기
-              </LinkButton>
             </div>
           </div>
 
